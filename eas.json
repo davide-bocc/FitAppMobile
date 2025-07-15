@@ -1,14 +1,23 @@
 {
   "cli": {
-    "version": ">= 3.0.0",
-    "appVersionSource": "version"
+    "appVersionSource": "local",
+    "promptToConfigurePushNotifications": false
   },
   "build": {
-    "production": {
+    "preview": {
       "android": {
         "buildType": "apk",
-        "jdk": "17"
+        "gradleCommand": ":app:assembleRelease",
+        "withoutCredentials": true
+      }
+    },
+    "production": {
+      "android": {
+        "buildType": "app-bundle"
       }
     }
+  },
+  "submit": {
+    "production": {}
   }
 }
