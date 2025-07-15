@@ -1,23 +1,23 @@
 {
-  "cli": {
-    "appVersionSource": "local",
-    "promptToConfigurePushNotifications": false
-  },
   "build": {
     "preview": {
       "android": {
         "buildType": "apk",
-        "gradleCommand": ":app:assembleRelease",
-        "withoutCredentials": true
+        "gradleCommand": ":app:assembleDebug",
+        "distribution": "internal",
+        "withoutCredentials": false
       }
     },
     "production": {
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease",
+        "distribution": "store",
+        "credentialsSource": "local"
       }
     }
   },
-  "submit": {
-    "production": {}
+  "cli": {
+    "version": ">= 8.0.0"
   }
 }
