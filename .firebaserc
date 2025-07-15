@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "staging": "fitapp-mobile-c746d",
+    "default": "fitapp-mobile-c746d"
+  },
+  "targets": {},
+  "etags": {}
+}

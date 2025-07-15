@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Picker } from 'react-native';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth, db } from '../services/database';
-import { doc, setDoc } from 'firebase/firestore';
+import { View, Text, TextInput, Button, StyleSheet, Picker, ActivityIndicator } from 'react-native';
+import { AuthService } from '../services/AuthService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const RegisterScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -10,19 +9,33 @@ const RegisterScreen = ({ navigation }) => {
   const [name, setName] = useState('');
   const [userType, setUserType] = useState('student');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
+    setLoading(true);
+    setError('');
+
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      await setDoc(doc(db, 'users', userCredential.user.uid), {
-        name,
-        email,
-        userType,
-        createdAt: new Date().toISOString()
-      });
-      navigation.navigate('Home');
+      const result = await AuthService.register(email, password, userType);
+
+      if (result.success) {
+        // Salva il token e i dati utente
+        await AsyncStorage.setItem('userToken', result.token);
+        await AsyncStorage.setItem('userData', JSON.stringify({
+          id: result.user.id,
+          name,
+          email,
+          userType
+        }));
+
+        navigation.navigate('Home');
+      } else {
+        setError(result.error || 'Registrazione fallita');
+      }
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Errore durante la registrazione');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -30,12 +43,14 @@ const RegisterScreen = ({ navigation }) => {
     <View style={styles.container}>
       <Text style={styles.title}>Registrazione</Text>
       {error ? <Text style={styles.error}>{error}</Text> : null}
+
       <TextInput
         style={styles.input}
         placeholder="Nome completo"
         value={name}
         onChangeText={setName}
       />
+
       <TextInput
         style={styles.input}
         placeholder="Email"
@@ -44,6 +59,7 @@ const RegisterScreen = ({ navigation }) => {
         keyboardType="email-address"
         autoCapitalize="none"
       />
+
       <TextInput
         style={styles.input}
         placeholder="Password"
@@ -51,18 +67,25 @@ const RegisterScreen = ({ navigation }) => {
         onChangeText={setPassword}
         secureTextEntry
       />
+
       <Picker
         selectedValue={userType}
         style={styles.picker}
-        onValueChange={(itemValue) => setUserType(itemValue)}>
+        onValueChange={setUserType}>
         <Picker.Item label="Allievo" value="student" />
         <Picker.Item label="Coach" value="coach" />
       </Picker>
-      <Button title="Registrati" onPress={handleRegister} />
+
+      {loading ? (
+        <ActivityIndicator size="large" color="#0000ff" />
+      ) : (
+        <Button title="Registrati" onPress={handleRegister} />
+      )}
     </View>
   );
 };
 
+// Stili rimangono identici
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, justifyContent: 'center' },
   title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
