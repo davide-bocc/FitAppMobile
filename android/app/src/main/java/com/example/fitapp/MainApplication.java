@@ -3,7 +3,8 @@ package com.example.fitapp;
 import android.app.Application;
 import android.content.res.Configuration;
 import androidx.annotation.NonNull;
-
+import com.swmansion.reanimated.ReanimatedJSIModulePackage;
+import com.facebook.react.bridge.JSIModulePackage;
 import com.facebook.react.PackageList;
 import com.facebook.react.ReactApplication;
 import com.facebook.react.ReactNativeHost;
@@ -49,6 +50,10 @@ public class MainApplication extends Application implements ReactApplication {
       @Override
       protected Boolean isHermesEnabled() {
         return BuildConfig.IS_HERMES_ENABLED;
+      }
+      @Override
+      protected JSIModulePackage getJSIModulePackage() {
+        return new ReanimatedJSIModulePackage();
       }
   });
 

@@ -78,4 +78,4 @@ const styles = StyleSheet.create({
   error: { color: 'red', marginBottom: 10 }
 });
 
-export default LoginScreen;
+export default LoginScreen;g

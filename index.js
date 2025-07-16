@@ -1,6 +1,9 @@
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
-admin.initializeApp();
+import firestore from '@react-native-firebase/firestore';
+import { AppRegistry } from 'react-native';
+import App from './App';
+import { name as appName } from './app.json';
+
+AppRegistry.registerComponent(appName, () => App);
 
 // Helper: Verifica se l'utente è un coach
 const isCoach = async (uid) => {

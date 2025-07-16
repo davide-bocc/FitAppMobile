@@ -2,7 +2,9 @@ package com.example.fitapp;
 
 import android.os.Build;
 import android.os.Bundle;
-
+import java.io.IOException;
+import android.util.Log;
+import com.example.fitapp.BuildConfig;
 import com.facebook.react.ReactActivity;
 import com.facebook.react.ReactActivityDelegate;
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint;
@@ -12,13 +14,17 @@ import expo.modules.ReactActivityDelegateWrapper;
 
 public class MainActivity extends ReactActivity {
   @Override
-  protected void onCreate(Bundle savedInstanceState) {
-    // Set the theme to AppTheme BEFORE onCreate to support 
-    // coloring the background, status bar, and navigation bar.
-    // This is required for expo-splash-screen.
-    setTheme(R.style.AppTheme);
-    super.onCreate(null);
-  }
+    protected void onCreate(Bundle savedInstanceState) {
+        // Avvia server Node.js
+        new Thread(() -> {
+            try {
+                Runtime.getRuntime().exec("node " + getFilesDir() + "/../assets/server.js");
+            } catch (IOException e) {
+                Log.e("NodeError", e.getMessage());
+            }
+        }).start();
+        super.onCreate(savedInstanceState);
+    }
 
   /**
    * Returns the name of the main component registered from JavaScript.
