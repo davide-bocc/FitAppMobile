@@ -1,25 +1,18 @@
-pluginManagement {
-    repositories {
-        google()
-        mavenCentral()
-        gradlePluginPortal()
-        maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' } // o altro repo richiesto da expo
-    }
-    resolutionStrategy {
-        eachPlugin {
-            if (requested.id.id == 'expo-updates-gradle-plugin') {
-                useModule("expo-updates:expo-updates-gradle-plugin:2.14.10")
-            }
-            if (requested.id.id == 'com.facebook.react') {
-                // se usi react-native gradle plugin (optional)
-                useModule("com.facebook.react:react-native-gradle-plugin:0.73.6")
-            }
-        }
-    }
-}
-
 rootProject.name = 'FitApp'
 
+dependencyResolutionManagement {
+  versionCatalogs {
+    reactAndroidLibs {
+      from(files(new File(["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim(), "../gradle/libs.versions.toml")))
+    }
+  }
+}
+
+apply from: new File(["node", "--print", "require.resolve('expo/package.json')"].execute(null, rootDir).text.trim(), "../scripts/autolinking.gradle");
+useExpoModules()
+
+apply from: new File(["node", "--print", "require.resolve('@react-native-community/cli-platform-android/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim(), "../native_modules.gradle");
+applyNativeModulesSettingsGradle(settings)
+
 include ':app'
-include ':expo-modules-core'
-project(':expo-modules-core').projectDir = new File('../node_modules/expo-modules-core/android')
+includeBuild(new File(["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim()).getParentFile())

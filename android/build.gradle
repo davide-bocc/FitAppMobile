@@ -1,85 +1,40 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
 buildscript {
     ext {
-        buildToolsVersion = "34.0.0"
-        minSdkVersion = 23
-        compileSdkVersion = 34
-        targetSdkVersion = 34
-        kotlinVersion = "1.9.20"
-        frescoVersion = "2.6.0"
-        ndkVersion = "26.2.11394342"
-        reactNativeReanimatedVersion = "3.6.2"
-        reactNativeVersion = "0.73.6"
-        expoUpdatesVersion = "0.18.19"  // Aggiunto per expo-updates
-    }
+        buildToolsVersion = findProperty('android.buildToolsVersion') ?: '34.0.0'
+        minSdkVersion = Integer.parseInt(findProperty('android.minSdkVersion') ?: '23')
+        compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '34')
+        targetSdkVersion = Integer.parseInt(findProperty('android.targetSdkVersion') ?: '34')
+        kotlinVersion = findProperty('android.kotlinVersion') ?: '1.8.10'
 
+        ndkVersion = "25.1.8937393"
+    }
     repositories {
-        maven { url 'https://repo.expo.dev/android' }
         google()
         mavenCentral()
-        maven { url 'https://jitpack.io' }
-        maven { url 'https://maven.google.com' }
-
     }
-
     dependencies {
-        classpath("com.android.tools.build:gradle:8.0.2")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
-        //classpath("com.expo.gradle:expo-updates-gradle-plugin:0.22.0")  // Aggiunto
+        classpath('com.android.tools.build:gradle')
+        classpath('com.facebook.react:react-native-gradle-plugin')
     }
 }
+
+apply plugin: "com.facebook.react.rootproject"
 
 allprojects {
     repositories {
+        maven {
+            // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
+            url(new File(['node', '--print', "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim(), '../android'))
+        }
+        maven {
+            // Android JSC is installed from npm
+            url(new File(['node', '--print', "require.resolve('jsc-android/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim(), '../dist'))
+        }
+
         google()
         mavenCentral()
-        maven { url 'https://jitpack.io' }
-
-        // Repository specifici per React Native
-        exclusiveContent {
-            forRepository {
-                maven {
-                    url("$rootDir/../node_modules/react-native/android")
-                }
-                maven {
-                    url("$rootDir/../node_modules/jsc-android/dist")
-                }
-            }
-            filter {
-                includeGroup("com.facebook.react")
-                includeGroup("org.webkit")
-            }
-        }
-
-        // Repository Expo
-        maven {
-            url("$rootDir/../node_modules/expo-camera/android/maven")
-        }
-        maven {
-            url new File(
-                ["node", "--print", "require.resolve('expo-modules-core/package.json')"].execute(null, rootDir).text.trim(),
-                "../android/maven"
-            )
-        }
-        maven {
-            url("${rootDir}/../node_modules/expo-updates/android/maven")
-        }
-    }
-}
-
-// Configurazioni globali
-tasks.withType(org.gradle.api.tasks.Delete).configureEach {
-    delete rootProject.layout.buildDirectory
-}
-
-tasks.named("wrapper") {
-    gradleVersion = "8.0.2"
-    distributionType = Wrapper.DistributionType.ALL
-}
-
-// Configurazione Kotlin
-tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-    kotlinOptions {
-        jvmTarget = "17"
-        freeCompilerArgs += ["-Xjsr305=strict"]
+        maven { url 'https://www.jitpack.io' }
     }
 }
