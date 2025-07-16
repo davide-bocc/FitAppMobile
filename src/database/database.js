@@ -1,18 +1,22 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { openDatabase } from 'react-native-sqlite-storage';
 
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+const db = openDatabase({
+  name: 'fitapp.db',
+  location: 'default'
+});
+
+export const getDB = () => db;
+
+// Funzioni helper per SQLite
+export const executeQuery = (query, params = []) => {
+  return new Promise((resolve, reject) => {
+    db.transaction(tx => {
+      tx.executeSql(
+        query,
+        params,
+        (_, result) => resolve(result),
+        (_, error) => reject(error)
+      );
+    });
+  });
 };
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-export { auth, db };

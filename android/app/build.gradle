@@ -1,6 +1,6 @@
 apply plugin: 'com.android.application'
 apply plugin: 'org.jetbrains.kotlin.android'
-apply plugin: 'expo-updates'
+
 
 
 
@@ -69,7 +69,7 @@ android {
         }
     }
 }
-
+/*
 react {
     entryFile = file("../../App.js").exists() ? "../../App.js" : "../../index.js"
 
@@ -85,6 +85,7 @@ react {
         "sdks/hermesc/${System.getProperty('os.name').toLowerCase().contains('windows') ? 'win64' : 'linux64'}/hermesc"
     ).absolutePath
 }
+*/
 
 dependencies {
     implementation "com.facebook.react:react-android"

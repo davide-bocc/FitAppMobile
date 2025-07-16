@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Picker, ActivityIndicator } from 'react-native';
-import { AuthService } from '../services/AuthService';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { View, Text, TextInput, Button, StyleSheet, Picker, ActivityIndicator, Alert } from 'react-native';
+import { executeQuery } from '../services/database'; // Import modificato
+import * as Crypto from 'expo-crypto'; // Per hash della password
 
 const RegisterScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -15,25 +15,41 @@ const RegisterScreen = ({ navigation }) => {
     setLoading(true);
     setError('');
 
+    // Validazione base
+    if (!email || !password || !name) {
+      setError('Compila tutti i campi');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const result = await AuthService.register(email, password, userType);
+      // Hash della password (base64 per semplicità)
+      const passwordHash = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        password
+      );
 
-      if (result.success) {
-        // Salva il token e i dati utente
-        await AsyncStorage.setItem('userToken', result.token);
-        await AsyncStorage.setItem('userData', JSON.stringify({
-          id: result.user.id,
-          name,
-          email,
-          userType
-        }));
+      // Inserimento nel database SQLite
+      const result = await executeQuery(
+        `INSERT INTO users (email, password, name, role, is_logged_in)
+         VALUES (?, ?, ?, ?, 1)`,
+        [email, passwordHash, name, userType]
+      );
 
-        navigation.navigate('Home');
-      } else {
-        setError(result.error || 'Registrazione fallita');
+      if (result.insertId) {
+        Alert.alert(
+          'Registrazione completata',
+          `Benvenuto ${name}!`,
+          [{ text: 'OK', onPress: () => navigation.navigate('Home') }]
+        );
       }
     } catch (err) {
-      setError(err.message || 'Errore durante la registrazione');
+      if (err.message.includes('UNIQUE constraint failed')) {
+        setError('Email già registrata');
+      } else {
+        setError('Errore durante la registrazione');
+        console.error('Registration error:', err);
+      }
     } finally {
       setLoading(false);
     }
@@ -62,10 +78,11 @@ const RegisterScreen = ({ navigation }) => {
 
       <TextInput
         style={styles.input}
-        placeholder="Password"
+        placeholder="Password (min. 6 caratteri)"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
+        minLength={6}
       />
 
       <Picker

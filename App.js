@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { auth } from './services/database';
-import { onAuthStateChanged } from 'firebase/auth';
+import { executeQuery, getDB } from './services/database'; // Import modificato
 
 import LoginScreen from './src/auth/LoginScreen';
 import RegisterScreen from './src/auth/RegisterScreen';
@@ -14,25 +13,36 @@ import ExecuteWorkoutScreen from './src/screens/ExecuteWorkoutScreen';
 const Stack = createStackNavigator();
 
 export default function App() {
-  const [initializing, setInitializing] = React.useState(true);
-  const [user, setUser] = React.useState(null);
-  const [userType, setUserType] = React.useState(null);
+  const [initializing, setInitializing] = useState(true);
+  const [user, setUser] = useState(null);
+  const [userType, setUserType] = useState(null);
 
-  React.useEffect(() => {
-    const subscriber = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // Qui dovresti recuperare il tipo di utente dal database
-        // Per semplicità lo impostiamo staticamente
-        setUser(user);
-        setUserType('coach'); // o 'student' in base all'utente
-      } else {
-        setUser(null);
-        setUserType(null);
+  useEffect(() => {
+    const initApp = async () => {
+      try {
+        // Inizializza il database SQLite
+        const db = await getDB();
+
+        // Verifica se esiste un utente loggato localmente
+        const result = await executeQuery(
+          'SELECT * FROM users WHERE is_logged_in = 1 LIMIT 1'
+        );
+
+        if (result.rows.length > 0) {
+          const loggedInUser = result.rows.item(0);
+          setUser(loggedInUser);
+          setUserType(loggedInUser.role); // 'coach' o 'student'
+        }
+
+      } catch (error) {
+        console.error('Init error:', error);
+      } finally {
+        setInitializing(false);
       }
-      if (initializing) setInitializing(false);
-    });
-    return subscriber; // Unsubscribe on unmount
-  }, [initializing]);
+    };
+
+    initApp();
+  }, []);
 
   if (initializing) return null;
 
@@ -41,7 +51,9 @@ export default function App() {
       <Stack.Navigator>
         {!user ? (
           <>
-            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Login">
+              {(props) => <LoginScreen {...props} onLogin={handleLogin} />}
+            </Stack.Screen>
             <Stack.Screen name="Register" component={RegisterScreen} />
           </>
         ) : userType === 'coach' ? (
@@ -58,4 +70,29 @@ export default function App() {
       </Stack.Navigator>
     </NavigationContainer>
   );
+
+  async function handleLogin(email, password) {
+    try {
+      const result = await executeQuery(
+        'SELECT * FROM users WHERE email = ? AND password = ?',
+        [email, password]
+      );
+
+      if (result.rows.length > 0) {
+        const user = result.rows.item(0);
+        // Aggiorna lo stato di login nel database
+        await executeQuery(
+          'UPDATE users SET is_logged_in = 1 WHERE id = ?',
+          [user.id]
+        );
+        setUser(user);
+        setUserType(user.role);
+        return { success: true };
+      }
+      return { success: false, message: 'Credenziali non valide' };
+    } catch (error) {
+      console.error('Login error:', error);
+      return { success: false, message: 'Errore durante il login' };
+    }
+  }
 }
