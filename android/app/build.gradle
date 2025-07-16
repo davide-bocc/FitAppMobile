@@ -1,14 +1,14 @@
-apply plugin: "com.android.application"
-apply plugin: "com.facebook.react"
-apply plugin: "expo-updates-gradle-plugin"
+apply plugin: 'com.android.application'
+apply plugin: 'org.jetbrains.kotlin.android'
+apply plugin: 'expo-updates'
 
-def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
+
 
 android {
-    ndkVersion rootProject.ext.ndkVersion
-    compileSdkVersion rootProject.ext.compileSdkVersion
-
     namespace 'com.example.fitapp'
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+
     defaultConfig {
         applicationId 'com.example.fitapp'
         minSdkVersion rootProject.ext.minSdkVersion
@@ -16,18 +16,18 @@ android {
         versionCode 1
         versionName "1.0"
 
-        buildConfigField("boolean", "IS_NEW_ARCHITECTURE_ENABLED", "false")
-        buildConfigField("boolean", "IS_HERMES_ENABLED", "true")
-        buildConfigField("boolean", "REACT_NATIVE_UNSTABLE_USE_RUNTIME_SCHEDULER_ALWAYS", "false")
-
-        packagingOptions {
-            pickFirst '**/libnode.so'
-            exclude '**/libjsc.so'
-        }
+        buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", "false"
+        buildConfigField "boolean", "IS_HERMES_ENABLED", "true"
+        buildConfigField "boolean", "REACT_NATIVE_UNSTABLE_USE_RUNTIME_SCHEDULER_ALWAYS", "false"
 
         ndk {
             abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
         }
+    }
+
+    packagingOptions {
+        pickFirst '**/libnode.so'
+        exclude '**/libjsc.so'
     }
 
     signingConfigs {
@@ -39,9 +39,9 @@ android {
         }
         release {
             storeFile file('my-release-key.keystore')
-            storePassword 'Cl1mb!ng.Ks' // Sostituisci con la tua password
+            storePassword 'Cl1mb!ng.Ks'  // Ricorda di proteggere le tue password, evita di committarle in repo pubblici
             keyAlias 'my-key-alias'
-            keyPassword 'Cl1mb!ng.Ks' // Sostituisci con la tua password
+            keyPassword 'Cl1mb!ng.Ks'
         }
     }
 
@@ -71,55 +71,45 @@ android {
 }
 
 react {
-    entryFile = file("../../App.js").exists() ? file("../../App.js") : file("../../index.js")
-    reactNativeDir = new File(["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim()).getParentFile().getAbsoluteFile()
-    hermesCommand = new File(["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim()).getParentFile().getAbsolutePath() + "/sdks/hermesc/%OS-BIN%/hermesc"
-}
+    entryFile = file("../../App.js").exists() ? "../../App.js" : "../../index.js"
 
-["pickFirsts", "excludes", "merges", "doNotStrip"].each { prop ->
-    def options = (findProperty("android.packagingOptions.$prop") ?: "").split(",")
-    for (i in 0..<options.size()) options[i] = options[i].trim()
-    options -= ""
+    reactNativeDir = new File(
+        ["node", "--print", "require.resolve('react-native/package.json')"]
+            .execute(null, rootDir)
+            .text
+            .trim()
+    ).parentFile.absoluteFile
 
-    if (options.length > 0) {
-        options.each {
-            android.packagingOptions[prop] += it
-        }
-    }
+    hermesCommand = new File(
+        reactNativeDir,
+        "sdks/hermesc/${System.getProperty('os.name').toLowerCase().contains('windows') ? 'win64' : 'linux64'}/hermesc"
+    ).absolutePath
 }
 
 dependencies {
-    implementation("com.facebook.react:react-android")
+    implementation "com.facebook.react:react-android"
 
-    def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true"
-    def isWebpEnabled = (findProperty('expo.webp.enabled') ?: "") == "true"
-    def isWebpAnimatedEnabled = (findProperty('expo.webp.animated') ?: "") == "true"
     def frescoVersion = rootProject.ext.frescoVersion
 
-    if (isGifEnabled || isWebpEnabled) {
-        implementation("com.facebook.fresco:fresco:${frescoVersion}")
-        implementation("com.facebook.fresco:imagepipeline-okhttp3:${frescoVersion}")
-    }
+    implementation "com.facebook.fresco:fresco:$frescoVersion"
+    implementation "com.facebook.fresco:imagepipeline-okhttp3:$frescoVersion"
 
-    if (isGifEnabled) {
-        implementation("com.facebook.fresco:animated-gif:${frescoVersion}")
+    debugImplementation("com.facebook.flipper:flipper:0.125.0")
+    debugImplementation("com.facebook.flipper:flipper-network-plugin:0.125.0") {
+        exclude group: 'com.squareup.okhttp3', module: 'okhttp'
     }
+    debugImplementation("com.facebook.flipper:flipper-fresco-plugin:0.125.0")
 
-    if (isWebpEnabled) {
-        implementation("com.facebook.fresco:webpsupport:${frescoVersion}")
-        if (isWebpAnimatedEnabled) {
-            implementation("com.facebook.fresco:animated-webp:${frescoVersion}")
-        }
-    }
-
-    debugImplementation("com.facebook.flipper:flipper:${FLIPPER_VERSION}")
-    debugImplementation("com.facebook.flipper:flipper-network-plugin:${FLIPPER_VERSION}") {
-        exclude group:'com.squareup.okhttp3', module:'okhttp'
-    }
-    debugImplementation("com.facebook.flipper:flipper-fresco-plugin:${FLIPPER_VERSION}")
-
-    implementation("com.facebook.react:hermes-android")
+    implementation "com.facebook.react:hermes-android"
 }
 
-apply from: new File(["node", "--print", "require.resolve('@react-native-community/cli-platform-android/package.json')"].execute(null, rootDir).text.trim(), "../native_modules.gradle")
+// Importa native_modules.gradle dal pacchetto CLI React Native
+apply from: new File(
+    ["node", "--print", "require.resolve('@react-native-community/cli-platform-android/package.json')"]
+        .execute(null, rootDir)
+        .text
+        .trim(),
+    "../native_modules.gradle"
+)
+
 applyNativeModulesAppBuildGradle(project)

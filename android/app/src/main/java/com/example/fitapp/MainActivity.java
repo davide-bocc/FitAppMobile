@@ -14,58 +14,46 @@ import expo.modules.ReactActivityDelegateWrapper;
 
 public class MainActivity extends ReactActivity {
   @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        // Avvia server Node.js
-        new Thread(() -> {
-            try {
-                Runtime.getRuntime().exec("node " + getFilesDir() + "/../assets/server.js");
-            } catch (IOException e) {
-                Log.e("NodeError", e.getMessage());
-            }
-        }).start();
-        super.onCreate(savedInstanceState);
-    }
+  protected void onCreate(Bundle savedInstanceState) {
+    // Avvia server Node.js (tua personalizzazione)
+    new Thread(() -> {
+        try {
+            Runtime.getRuntime().exec("node " + getFilesDir() + "/../assets/server.js");
+        } catch (IOException e) {
+            Log.e("NodeError", e.getMessage());
+        }
+    }).start();
 
-  /**
-   * Returns the name of the main component registered from JavaScript.
-   * This is used to schedule rendering of the component.
-   */
+    super.onCreate(savedInstanceState);
+  }
+
   @Override
   protected String getMainComponentName() {
-    return "main";
+    return "main"; // Mantieni il tuo nome del componente
   }
 
-  /**
-   * Returns the instance of the {@link ReactActivityDelegate}. Here we use a util class {@link
-   * DefaultReactActivityDelegate} which allows you to easily enable Fabric and Concurrent React
-   * (aka React 18) with two boolean flags.
-   */
   @Override
   protected ReactActivityDelegate createReactActivityDelegate() {
-    return new ReactActivityDelegateWrapper(this, BuildConfig.IS_NEW_ARCHITECTURE_ENABLED, new DefaultReactActivityDelegate(
+    // Modifica per RN 0.73.x
+    return new ReactActivityDelegateWrapper(
+      this,
+      new DefaultReactActivityDelegate(
         this,
         getMainComponentName(),
-        // If you opted-in for the New Architecture, we enable the Fabric Renderer.
-        DefaultNewArchitectureEntryPoint.getFabricEnabled()));
+        DefaultNewArchitectureEntryPoint.getFabricEnabled(),
+        DefaultNewArchitectureEntryPoint.getConcurrentReactEnabled() // Nuovo parametro
+      )
+    );
   }
 
-  /**
-   * Align the back button behavior with Android S
-   * where moving root activities to background instead of finishing activities.
-   * @see <a href="https://developer.android.com/reference/android/app/Activity#onBackPressed()">onBackPressed</a>
-   */
   @Override
   public void invokeDefaultOnBackPressed() {
     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
       if (!moveTaskToBack(false)) {
-        // For non-root activities, use the default implementation to finish them.
         super.invokeDefaultOnBackPressed();
       }
       return;
     }
-
-    // Use the default back button implementation on Android S
-    // because it's doing more than {@link Activity#moveTaskToBack} in fact.
     super.invokeDefaultOnBackPressed();
   }
 }
