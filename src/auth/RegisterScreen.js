@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, ActivityIndicator, Alert } from 'react-native';
-import { AuthService } from './AuthService';
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 
 const RegisterScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -11,6 +12,7 @@ const RegisterScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
+    // Validazione
     if (!email || !password || !name) {
       setError('Compila tutti i campi');
       return;
@@ -21,28 +23,52 @@ const RegisterScreen = ({ navigation }) => {
       return;
     }
 
+    if (!email.includes('@')) {
+      setError('Inserisci un email valida');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
-      const result = await AuthService.register(email, password, {
+      // 1. Registra l'utente con Firebase Auth
+      const { user } = await auth().createUserWithEmailAndPassword(email, password);
+
+      // 2. Salva dati aggiuntivi in Firestore
+      await firestore().collection('users').doc(user.uid).set({
         name,
+        email,
         role: userType,
-        isLoggedIn: true
+        createdAt: firestore.FieldValue.serverTimestamp(),
+        isActive: true
       });
 
-      if (result.success) {
-        Alert.alert(
-          'Registrazione completata',
-          `Benvenuto ${name}!`,
-          [{ text: 'OK', onPress: () => navigation.navigate('Home') }]
-        );
-      } else {
-        setError(result.error);
+      // 3. Mostra alert e reindirizza
+      Alert.alert(
+        'Registrazione completata',
+        `Benvenuto ${name}!`,
+        [{ text: 'OK', onPress: () => navigation.navigate('Home') }]
+      );
+
+    } catch (error) {
+      // Gestione errori specifici
+      let errorMessage = 'Errore durante la registrazione';
+
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          errorMessage = 'Email già registrata';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'Email non valida';
+          break;
+        case 'auth/weak-password':
+          errorMessage = 'Password troppo debole';
+          break;
       }
-    } catch (err) {
-      setError('Errore durante la registrazione');
-      console.error(err);
+
+      setError(errorMessage);
+      console.error('Registration error:', error);
     } finally {
       setLoading(false);
     }
@@ -50,7 +76,8 @@ const RegisterScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Registrazione</Text>
+      <Text style={styles.title}>Registrazione FitApp</Text>
+
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <TextInput
@@ -58,6 +85,7 @@ const RegisterScreen = ({ navigation }) => {
         placeholder="Nome completo"
         value={name}
         onChangeText={setName}
+        autoCapitalize="words"
       />
 
       <TextInput
@@ -77,38 +105,88 @@ const RegisterScreen = ({ navigation }) => {
         secureTextEntry
       />
 
-      <View style={styles.pickerContainer}>
-        <Text>Tipo utente:</Text>
-        <View style={styles.radioContainer}>
+      <View style={styles.userTypeContainer}>
+        <Text style={styles.label}>Tipo utente:</Text>
+        <View style={styles.buttonsContainer}>
           <Button
             title="Allievo"
             onPress={() => setUserType('student')}
-            color={userType === 'student' ? '#007AFF' : 'gray'}
+            color={userType === 'student' ? '#007AFF' : '#CCCCCC'}
           />
           <Button
             title="Coach"
             onPress={() => setUserType('coach')}
-            color={userType === 'coach' ? '#007AFF' : 'gray'}
+            color={userType === 'coach' ? '#007AFF' : '#CCCCCC'}
           />
         </View>
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#007AFF" />
       ) : (
-        <Button title="Registrati" onPress={handleRegister} />
+        <Button
+          title="Registrati"
+          onPress={handleRegister}
+          disabled={loading}
+        />
       )}
+
+      <Text
+        style={styles.loginText}
+        onPress={() => navigation.navigate('Login')}
+      >
+        Hai già un account? Accedi
+      </Text>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, justifyContent: 'center' },
-  title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
-  input: { height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10, padding: 10 },
-  pickerContainer: { marginBottom: 20 },
-  radioContainer: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 10 },
-  error: { color: 'red', marginBottom: 10 }
+  container: {
+    flex: 1,
+    padding: 20,
+    justifyContent: 'center',
+    backgroundColor: '#F5F5F5'
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 30,
+    textAlign: 'center',
+    color: '#333'
+  },
+  input: {
+    height: 50,
+    borderColor: '#DDD',
+    borderWidth: 1,
+    marginBottom: 15,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    backgroundColor: '#FFF'
+  },
+  userTypeContainer: {
+    marginBottom: 20
+  },
+  label: {
+    marginBottom: 8,
+    fontSize: 16,
+    color: '#555'
+  },
+  buttonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between'
+  },
+  error: {
+    color: 'red',
+    marginBottom: 15,
+    textAlign: 'center'
+  },
+  loginText: {
+    marginTop: 20,
+    color: '#007AFF',
+    textAlign: 'center',
+    textDecorationLine: 'underline'
+  }
 });
 
 export default RegisterScreen;

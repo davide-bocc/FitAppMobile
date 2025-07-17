@@ -17,7 +17,7 @@ react {
 
 // Configurazione Hermes (fuori dal blocco react)
 project.ext.react = [
-    enableHermes: true,  // Imposta a false per disabilitare Hermes
+    enableHermes: false,  // Imposta a false per disabilitare Hermes
     hermesFlags: ["-O", "-output-source-map"]
 ]
 
@@ -26,10 +26,10 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.example.fitapp'
+    namespace 'Fit.App.Mobile'
 
     defaultConfig {
-        applicationId 'com.example.fitapp'
+        applicationId 'Fit.App.Mobile'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
