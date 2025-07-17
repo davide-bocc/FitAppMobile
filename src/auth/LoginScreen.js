@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, ActivityIndicator } from 'react-native';
-import { AuthService } from '../services/AuthService';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AuthService } from './AuthService';
+import { auth } from '../services/firebase';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -10,6 +10,11 @@ const LoginScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
+    if (!email || !password) {
+      setError('Inserisci email e password');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -17,16 +22,13 @@ const LoginScreen = ({ navigation }) => {
       const result = await AuthService.login(email, password);
 
       if (result.success) {
-        // Salva il token
-        await AsyncStorage.setItem('userToken', result.token);
-        await AsyncStorage.setItem('userData', JSON.stringify(result.user));
-
         navigation.navigate('Home');
       } else {
-        setError(result.error || 'Login fallito');
+        setError(result.error);
       }
     } catch (err) {
-      setError(err.message || 'Errore durante il login');
+      setError('Errore durante il login');
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -35,6 +37,7 @@ const LoginScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>
+
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <TextInput
@@ -70,7 +73,7 @@ const LoginScreen = ({ navigation }) => {
   );
 };
 
-// Stili rimangono identici
+// Stili rimangono invariati
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, justifyContent: 'center' },
   title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
@@ -78,4 +81,4 @@ const styles = StyleSheet.create({
   error: { color: 'red', marginBottom: 10 }
 });
 
-export default LoginScreen;g
+export default LoginScreen;

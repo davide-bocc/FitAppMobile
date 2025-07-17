@@ -1,34 +1,29 @@
-const db = require('./db');
-
-const initSchema = () => {
-  // Tabella utenti
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id TEXT PRIMARY KEY,
-      email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      role TEXT CHECK(role IN ('coach', 'student')) NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-}
+// Questo file può essere eliminato in quanto le schemas sono ora in initDB.js
+// Oppure mantenuto per documentazione:
 
 export const DB_SCHEMAS = {
-  WORKOUTS: `
-    CREATE TABLE IF NOT EXISTS Workouts (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL UNIQUE
-    )`,
-  EXERCISES: `
-    CREATE TABLE IF NOT EXISTS Exercises (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      sets INTEGER NOT NULL,
-      reps INTEGER NOT NULL,
-      rest_seconds INTEGER NOT NULL,
-      workout_id INTEGER,
-      FOREIGN KEY(workout_id) REFERENCES Workouts(id)
-    )`
+  USERS: `...`, // Copia da initDB
+  WORKOUTS: `...`,
+  EXERCISES: `...`,
+  // ecc.
 };
 
-module.exports = initSchema;
+// Se vuoi mantenere per validazione schemi:
+export const validateSchema = async () => {
+  const requiredTables = ['users', 'workouts', 'exercises'];
+  try {
+    for (const table of requiredTables) {
+      const result = await executeQuery(
+        `SELECT name FROM sqlite_master WHERE type='table' AND name=?`,
+        [table]
+      );
+      if (result.rows.length === 0) {
+        throw new Error(`Missing table: ${table}`);
+      }
+    }
+    return true;
+  } catch (error) {
+    console.error('Schema validation failed:', error);
+    return false;
+  }
+};
