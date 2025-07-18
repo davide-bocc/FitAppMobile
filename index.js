@@ -1,6 +1,6 @@
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
-admin.initializeApp();
+//const functions = require('firebase-functions');
+//const admin = require('firebase-admin');
+//admin.initializeApp();
 
 // Helper: Verifica se l'utente è un coach
 const isCoach = async (uid) => {

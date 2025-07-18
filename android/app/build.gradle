@@ -3,19 +3,29 @@ apply plugin: "com.facebook.react"
 apply plugin: "com.google.gms.google-services"
 apply plugin: "org.jetbrains.kotlin.android"
 
+react {
+    reactNativeDir = rootProject.file("../node_modules/react-native")
+    codegenDir = rootProject.file("../node_modules/react-native-codegen")
+}
+
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
-    buildToolsVersion rootProject.ext.buildToolsVersion
-    namespace "com.fitappmobile"
+    ndkVersion rootProject.ext.ndkVersion
+    namespace "fit.app.mobile"
 
     defaultConfig {
-        applicationId "com.fitappmobile"
+        applicationId "fit.app.mobile"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0.0"
+        resValue "string", "build_config_package", "fit.app.mobile"
         multiDexEnabled true
-        resValue "string", "build_config_package", "com.fitappmobile"
+        vectorDrawables.useSupportLibrary = true
+
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+        }
     }
 
     signingConfigs {
@@ -36,9 +46,8 @@ android {
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
-            firebaseCrashlytics {
-                mappingFileUploadEnabled false
-            }
+            debuggable true
+            ext.enableCrashlytics = false
         }
         release {
             signingConfig signingConfigs.release
@@ -47,6 +56,7 @@ android {
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
             zipAlignEnabled true
             debuggable false
+            crunchPngs true
         }
     }
 
@@ -54,6 +64,7 @@ android {
         pickFirst "**/libc++_shared.so"
         pickFirst "**/libjsc.so"
         pickFirst "**/libhermes.so"
+        pickFirst "**/libreactnativejni.so"
         exclude "META-INF/**"
     }
 
@@ -75,20 +86,21 @@ dependencies {
     implementation(project(":react-native-vector-icons"))
     implementation(project(":react-native-sqlite-storage"))
 
-    // Firebase BOM (Bill of Materials)
-    implementation platform("com.google.firebase:firebase-bom:${rootProject.ext.firebaseBomVersion}")
+    // Firebase
+    implementation platform("com.google.firebase:firebase-bom:33.0.0")
     implementation "com.google.firebase:firebase-firestore"
     implementation "com.google.firebase:firebase-auth"
     implementation "com.google.firebase:firebase-analytics"
 
     // React Native
-    implementation("com.facebook.react:react-android:0.74.5")
-    implementation("com.facebook.react:hermes-android:0.74.5")
+    implementation "com.facebook.react:react-android:0.74.5"
+    implementation "com.facebook.react:hermes-android:0.74.5"
 
-    // Dipendenze core
+    // Core
     implementation "androidx.core:core-ktx:1.12.0"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
     implementation "com.android.support:multidex:2.0.1"
+    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
 }
 
 apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
