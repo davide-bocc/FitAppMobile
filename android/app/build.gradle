@@ -1,41 +1,21 @@
 apply plugin: "com.android.application"
-apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
-
-def projectRoot = rootDir.parentFile.absolutePath
-
-// Configurazione React Native
-react {
-    entryFile = file("${projectRoot}/index.js")
-    reactNativeDir = file("${projectRoot}/node_modules/react-native")
-    codegenDir = file("${projectRoot}/node_modules/@react-native/codegen")
-
-    // Configurazione del bundle
-    bundleCommand = "ram-bundle"
-    extraPackagerArgs = ["--indexed-ram-bundle", "--max-workers=2"]
-}
-
-// Configurazione Hermes (fuori dal blocco react)
-project.ext.react = [
-    enableHermes: false,  // Imposta a false per disabilitare Hermes
-    hermesFlags: ["-O", "-output-source-map"]
-]
+apply plugin: "com.google.gms.google-services"
+apply plugin: "org.jetbrains.kotlin.android"
 
 android {
-    ndkVersion rootProject.ext.ndkVersion
+    compileSdkVersion rootProject.ext.compileSdkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
-    compileSdk rootProject.ext.compileSdkVersion
-
-    namespace 'Fit.App.Mobile'
+    namespace "com.fitappmobile"
 
     defaultConfig {
-        applicationId 'Fit.App.Mobile'
+        applicationId "com.fitappmobile"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0.0"
-        resValue "string", "build_config_package", "com.example.fitapp"
         multiDexEnabled true
+        resValue "string", "build_config_package", "com.fitappmobile"
     }
 
     signingConfigs {
@@ -45,38 +25,36 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
-
         release {
-            // Configura qui il tuo keystore release
-            // storeFile file('my-release-key.keystore')
-            // storePassword 'yourpassword'
-            // keyAlias 'yourkeyalias'
-            // keyPassword 'yourkeypassword'
+            storeFile file('fitapp-release-key.keystore')
+            storePassword System.getenv("FITAPP_STORE_PASSWORD") ?: ""
+            keyAlias System.getenv("FITAPP_KEY_ALIAS") ?: ""
+            keyPassword System.getenv("FITAPP_KEY_PASSWORD") ?: ""
         }
     }
 
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
-            debuggable true
+            firebaseCrashlytics {
+                mappingFileUploadEnabled false
+            }
         }
         release {
-            signingConfig signingConfigs.debug // Cambia con signingConfigs.release per build finali
+            signingConfig signingConfigs.release
             minifyEnabled true
             shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            debuggable false
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
             zipAlignEnabled true
+            debuggable false
         }
     }
 
     packagingOptions {
-        pickFirst '**/libjsc.so'
-        pickFirst '**/libhermes.so'
-        pickFirst '**/libc++_shared.so'
-        exclude 'META-INF/proguard/androidx-annotations.pro'
-        exclude 'lib/x86/libsqlite.so'
-        exclude 'lib/x86_64/libsqlite.so'
+        pickFirst "**/libc++_shared.so"
+        pickFirst "**/libjsc.so"
+        pickFirst "**/libhermes.so"
+        exclude "META-INF/**"
     }
 
     compileOptions {
@@ -85,50 +63,33 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = '17'
+        jvmTarget = "17"
+    }
+
+    buildFeatures {
+        buildConfig true
     }
 }
 
 dependencies {
-    implementation("com.facebook.react:react-android")
+    implementation(project(":react-native-vector-icons"))
+    implementation(project(":react-native-sqlite-storage"))
 
-    // Configurazione condizionale per Hermes
-    def enableHermes = project.ext.react.get("enableHermes", false)
-    if (enableHermes) {
-        implementation("com.facebook.react:hermes-android")
-    } else {
-        implementation 'org.webkit:android-jsc:+'
-    }
+    // Firebase BOM (Bill of Materials)
+    implementation platform("com.google.firebase:firebase-bom:${rootProject.ext.firebaseBomVersion}")
+    implementation "com.google.firebase:firebase-firestore"
+    implementation "com.google.firebase:firebase-auth"
+    implementation "com.google.firebase:firebase-analytics"
 
-    // Dipendenze per immagini
-    implementation("com.facebook.fresco:fresco:2.6.0")
-    implementation("com.facebook.fresco:animated-gif:2.6.0")
-    implementation("com.facebook.fresco:webpsupport:2.6.0")
+    // React Native
+    implementation("com.facebook.react:react-android:0.74.5")
+    implementation("com.facebook.react:hermes-android:0.74.5")
 
-    // Dipendenze aggiuntive
-    implementation "androidx.core:core-ktx:1.10.1"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.10"
+    // Dipendenze core
+    implementation "androidx.core:core-ktx:1.12.0"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+    implementation "com.android.support:multidex:2.0.1"
 }
 
-// Applica i moduli nativi solo per versioni di React Native < 0.75
-if (getRNVersion() < versionToNumber(0, 75, 0)) {
-    apply from: new File(["node", "--print", "require.resolve('@react-native-community/cli-platform-android/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim(), "../native_modules.gradle")
-    applyNativeModulesAppBuildGradle(project)
-}
-
-// Helper function per la versione RN (aggiungi in cima al file se non presente)
-static def versionToNumber(major, minor, patch) {
-    return patch * 100 + minor * 10000 + major * 1000000
-}
-
-def getRNVersion() {
-    def versionOutput = new ByteArrayOutputStream()
-    exec {
-        workingDir(projectDir)
-        commandLine("node", "-e", "console.log(require('react-native/package.json').version);")
-        standardOutput = versionOutput
-    }
-    def version = versionOutput.toString().trim()
-    def (major, minor, patch) = version.tokenize('.').collect { it.toInteger() }
-    return versionToNumber(major, minor, patch)
-}
+apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
+applyNativeModulesAppBuildGradle(project)
