@@ -1,6 +1,6 @@
-//const functions = require('firebase-functions');
-//const admin = require('firebase-admin');
-//admin.initializeApp();
+const functions = require('firebase-functions');
+const admin = require('firebase-admin');
+admin.initializeApp();
 
 // Helper: Verifica se l'utente è un coach
 const isCoach = async (uid) => {
@@ -10,7 +10,9 @@ const isCoach = async (uid) => {
 
 // [1] Funzione per creare workout
 exports.createWorkout = functions.https.onCall(async (data, context) => {
-  if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Login required');
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Login required');
+  }
 
   const { athleteId, exercises } = data;
 
@@ -31,7 +33,9 @@ exports.createWorkout = functions.https.onCall(async (data, context) => {
 
 // [2] Funzione per completare workout
 exports.completeWorkout = functions.https.onCall(async (data, context) => {
-  if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Login required');
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Login required');
+  }
 
   const { workoutId, results } = data;
 

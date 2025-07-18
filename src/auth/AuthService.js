@@ -1,59 +1,61 @@
-import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
-  signOut,
-  connectAuthEmulator
+  signOut
 } from 'firebase/auth';
-import { auth } from './firebaseConfig';
-
-// Configurazione degli endpoint
-const API_BASE_URL = process.env.NODE_ENV === 'production'
-  ? 'https://fitappmobile.web.app'
-  : 'http://10.0.2.2:5001'; // Emulatore locale
-
-// Connessione all'emulatore in sviluppo
-if (process.env.NODE_ENV === 'development') {
-  connectAuthEmulator(auth, 'http://10.0.2.2:9099');
-}
+import { auth } from '../../database/firebase/firebaseConfig';
+import UserModel from '../models/UserModel';
 
 export const AuthService = {
   async register(email, password, userData) {
     try {
+      // Solo operazione Firebase (Firestore gestisce il resto via triggers)
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
         password
       );
 
-      // Invia dati aggiuntivi al tuo backend
-      const backendResponse = await fetch(`${API_BASE_URL}/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await userCredential.user.getIdToken()}`
-        },
-        body: JSON.stringify({
-          uid: userCredential.user.uid,
-          ...userData
-        })
+      // Salvataggio offline immediato
+      await UserModel.saveUserLocal({
+        uid: userCredential.user.uid,
+        email,
+        ...userData
       });
 
-      if (!backendResponse.ok) {
-        throw new Error('Failed to save user data');
+      return {
+        success: true,
+        user: userCredential.user
+      };
+    } catch (error) {
+      console.error('Registration error:', error);
+      return {
+        success: false,
+        error: this._mapFirebaseError(error)
+      };
+    }
+  },
+
+  async login(email, password) {
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+      // Caricamento dati da cache locale prima
+      let user = await UserModel.getUserLocal(userCredential.user.uid);
+
+      if (!user) {
+        user = await UserModel.getUserRemote(userCredential.user.uid);
       }
 
       return {
         success: true,
-        user: {
-          uid: userCredential.user.uid,
-          email: userCredential.user.email,
-          ...userData
-        }
+        user
       };
-
     } catch (error) {
-      console.error('Registration error:', error);
       return {
         success: false,
         error: this._mapFirebaseError(error)

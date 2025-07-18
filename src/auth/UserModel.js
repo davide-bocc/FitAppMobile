@@ -1,54 +1,25 @@
-import { executeQuery } from '../database/database';
-import { auth, db } from '../services/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../database/firebase/firebaseConfig';
+import LocalDB from '../../database/local/LocalDB';
 
-class UserModel {
-  // Crea utente sia su SQLite che Firebase (con fallback)
-  static async createUser(userData) {
-    try {
-      // Prima su Firebase
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        userData.email,
-        userData.password
-      );
-
-      await setDoc(doc(db, 'users', userCredential.user.uid), {
-        ...userData,
-        createdAt: serverTimestamp()
-      });
-
-      // Poi su SQLite per offline
-      await executeQuery(
-        `INSERT INTO users
-        (id, firebase_uid, email, name, role, last_sync, is_local)
-        VALUES (?, ?, ?, ?, ?, ?, 0)`,
-        [
-          userData.id || uuidv4(),
-          userCredential.user.uid,
-          userData.email,
-          userData.name,
-          userData.role,
-          new Date().toISOString()
-        ]
-      );
-
-      return userCredential.user.uid;
-    } catch (firebaseError) {
-      console.warn('Firebase failed, saving locally:', firebaseError);
-      // Fallback a SQLite
-      const localId = uuidv4();
-      await executeQuery(
-        `INSERT INTO users
-        (id, email, name, role, is_local)
-        VALUES (?, ?, ?, ?, 1)`,
-        [localId, userData.email, userData.name, userData.role]
-      );
-      return localId;
-    }
+export default class UserModel {
+  static async getUserLocal(uid) {
+    return LocalDB.get('users', uid);
   }
 
-  // Altri metodi con doppia implementazione...
-}
+  static async getUserRemote(uid) {
+    const docRef = doc(db, 'users', uid);
+    const docSnap = await getDoc(docRef);
 
-export default UserModel;
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      await LocalDB.set('users', uid, data); // Cache locale
+      return data;
+    }
+    return null;
+  }
+
+  static async saveUserLocal(userData) {
+    await LocalDB.set('users', userData.uid, userData);
+  }
+}
