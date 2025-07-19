@@ -6,20 +6,20 @@
     "start": "react-native start",
     "android": "react-native run-android",
     "ios": "react-native run-ios",
-    "build:apk": "cd android && ./gradlew assembleRelease",
+    "build:apk": "cd android && ./gradlew clean && ./gradlew assembleRelease",
     "build:bundle": "react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res",
     "lint": "eslint .",
     "test": "jest"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^1.21.0",
-    "@react-native-firebase/app": "^18.9.0",
-    "@react-native-firebase/auth": "^18.9.0",
-    "@react-native-firebase/firestore": "^18.9.0",
+    "@react-native-firebase/app": "^22.4.0",
+    "@react-native-firebase/auth": "^22.4.0",
+    "@react-native-firebase/firestore": "^22.4.0",
     "@react-navigation/native": "^6.1.8",
-    "node-libs-react-native": "^1.2.1",
+    "firebase": "^10.7.0",
     "react": "18.2.0",
-    "react-native": "^0.74.5",
+    "react-native": "0.74.5",
     "react-native-gesture-handler": "^2.16.1",
     "react-native-reanimated": "^3.10.1",
     "react-native-sqlite-storage": "^6.0.1",
@@ -41,5 +41,8 @@
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
+  },
+  "resolutions": {
+    "firebase": "^10.7.0"
   }
 }

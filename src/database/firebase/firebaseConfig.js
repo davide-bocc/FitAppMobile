@@ -1,85 +1,46 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Button, StyleSheet } from 'react-native';
-import { query, where, collection } from 'firebase/firestore';
-import { auth, fetchWithCache } from '../../../database/firebase/firebaseConfig';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { initializeApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
+import { getStorage } from 'firebase/storage';
 
-const UserHomeScreen = ({ navigation }) => {
-  const userId = auth.currentUser?.uid;
-  const [assignedWorkouts, setAssignedWorkouts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const loadWorkouts = async () => {
-      try {
-        setLoading(true);
-
-        // Usa il fetcher con cache
-        const workouts = await fetchWithCache(
-          'assignments',
-          [where('studentId', '==', userId)]
-        );
-
-        setAssignedWorkouts(workouts);
-        setLoading(false);
-      } catch (err) {
-        console.error('Failed to load workouts:', err);
-        setError(err.message);
-        setLoading(false);
-      }
-    };
-
-    if (userId) {
-      loadWorkouts();
-    }
-  }, [userId]);
-
-  const startWorkout = (workoutId) => {
-    // Log dell'avvio workout
-    console.log(`Starting workout ${workoutId} at ${new Date().toISOString()}`);
-    navigation.navigate('ExecuteWorkout', { workoutId });
-  };
-
-  if (loading) return <Text>Caricamento...</Text>;
-  if (error) return <Text>Errore: {error}</Text>;
-
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>I tuoi Workout assegnati</Text>
-
-      {assignedWorkouts.length === 0 ? (
-        <Text>Nessun workout assegnato</Text>
-      ) : (
-        <FlatList
-          data={assignedWorkouts}
-          keyExtractor={item => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.workoutItem}>
-              <Text style={styles.workoutName}>{item.workout?.name}</Text>
-              <Text>Esercizi: {item.workout?.exercises?.length || 0}</Text>
-              <Button
-                title="Inizia"
-                onPress={() => startWorkout(item.workoutId)}
-              />
-            </View>
-          )}
-        />
-      )}
-    </View>
-  );
-};
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
-  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 20 },
-  workoutItem: {
-    padding: 15,
-    marginBottom: 10,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 5
-  },
-  workoutName: { fontWeight: 'bold', fontSize: 16 }
+// Configurazione automatica da google-services.json
+const firebaseApp = initializeApp({
+  // Lasciare vuoto per usare google-services.json
 });
 
-export default UserHomeScreen;
+// Inizializzazione servizi
+export const auth = getAuth(firebaseApp);
+export const db = getFirestore(firebaseApp);
+export const functions = getFunctions(firebaseApp);
+export const storage = getStorage(firebaseApp);
+
+// Configurazione emulatori in sviluppo
+if (__DEV__) {
+  connectFirestoreEmulator(db, 'localhost', 8080);
+  connectFunctionsEmulator(functions, 'localhost', 5001);
+}
+
+// Helper per fetch con cache
+export const fetchWithCache = async (collectionName, queryConditions = []) => {
+  const cacheKey = `cache_${collectionName}_${JSON.stringify(queryConditions)}`;
+  try {
+    // Prova a recuperare dalla cache
+    const cachedData = await AsyncStorage.getItem(cacheKey);
+    if (cachedData) return JSON.parse(cachedData);
+
+    // Fetch da Firestore
+    const q = query(collection(db, collectionName), ...queryConditions);
+    const snapshot = await getDocs(q);
+    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    // Salva in cache (1 ora di validità)
+    await AsyncStorage.setItem(cacheKey, JSON.stringify(data));
+    await AsyncStorage.setItem(`${cacheKey}_timestamp`, Date.now().toString());
+
+    return data;
+  } catch (error) {
+    console.error("Fetch error:", error);
+    throw error;
+  }
+};

@@ -4,15 +4,13 @@ apply plugin: "com.google.gms.google-services"
 apply plugin: "com.google.firebase.crashlytics"
 apply plugin: "org.jetbrains.kotlin.android"
 
-/**
- * Configurazione React Native
- * (Formato compatibile con React Native 0.74+)
- */
 project.ext.react = [
-    enableHermes: true,  // Abilita Hermes
+    enableHermes: true,
+    bundleInDebug: false,
+    devDisabledInRelease: true,
     hermesCommand: "../../node_modules/hermes-engine/%OS-BIN%/hermesc",
-    codegenDir: "../../node_modules/react-native-codegen",
-    cliPath: "../../node_modules/react-native/cli.js"
+    bundleCommand: "ram-bundle",
+    extraPackagerArgs: ["--indexed-ram-bundle"]
 ]
 
 android {
@@ -31,7 +29,7 @@ android {
         vectorDrawables.useSupportLibrary = true
 
         ndk {
-            abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+            abiFilters "armeabi-v7a", "arm64-v8a" // Rimuovi x86 per ridurre dimensioni APK
         }
     }
 
@@ -55,16 +53,17 @@ android {
             signingConfig signingConfigs.debug
             debuggable true
             ext.enableCrashlytics = false
+            resValue "string", "CodePushDeploymentKey", '""'
         }
         release {
             signingConfig signingConfigs.release
             minifyEnabled true
-            shrinkResources false
+            shrinkResources true
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
             zipAlignEnabled true
             debuggable false
+            resValue "string", "CodePushDeploymentKey", '""'
 
-            // Configurazione Firebase Crashlytics
             firebaseCrashlytics {
                 nativeSymbolUploadEnabled true
                 strippedNativeLibsDir "build/intermediates/stripped_native_libs/release/out/lib"
@@ -75,9 +74,7 @@ android {
 
     packagingOptions {
         pickFirst "**/libc++_shared.so"
-        pickFirst "**/libjsc.so"
         pickFirst "**/libhermes.so"
-        pickFirst "**/libreactnativejni.so"
         exclude "META-INF/**"
         exclude "**/libreact_nativemodule_core.so"
     }
@@ -97,25 +94,28 @@ android {
 }
 
 dependencies {
-    implementation(project(":react-native-vector-icons"))
-    implementation(project(":react-native-sqlite-storage"))
-
-    // Firebase
-    implementation platform("com.google.firebase:firebase-bom:32.7.0")
-    implementation "com.google.firebase:firebase-firestore-ktx"
-    implementation "com.google.firebase:firebase-auth-ktx"
-    implementation "com.google.firebase:firebase-analytics-ktx"
-    implementation "com.google.firebase:firebase-crashlytics-ndk"
-
-    // React Native
+    // React Native core
     implementation "com.facebook.react:react-android:0.74.5"
     implementation "com.facebook.react:hermes-android:0.74.5"
 
-    // Core
+    // Firebase
+    implementation platform("com.google.firebase:firebase-bom:32.7.0")
+    implementation "com.google.firebase:firebase-firestore"
+    implementation "com.google.firebase:firebase-auth"
+    implementation "com.google.firebase:firebase-analytics"
+    implementation "com.google.firebase:firebase-crashlytics-ndk"
+    implementation "com.google.firebase:firebase-functions"
+
+    // Support libraries
     implementation "androidx.core:core-ktx:1.12.0"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
     implementation "com.android.support:multidex:2.0.1"
+
+    // React Native libraries
+    implementation project(":react-native-vector-icons")
+    implementation project(":react-native-sqlite-storage")
 }
 
+apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")
 apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
 applyNativeModulesAppBuildGradle(project)

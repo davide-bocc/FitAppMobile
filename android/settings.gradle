@@ -5,6 +5,7 @@ pluginManagement {
     def (_, reactNativeMinor, reactNativePatch) = version.split("-")[0].tokenize('.').collect { it.toInteger() }
 
     includeBuild(new File(["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json')"].execute(null, rootDir).text.trim()).getParentFile().toString())
+
     if (reactNativeMinor == 74 && reactNativePatch <= 3) {
         includeBuild("react-settings-plugin")
     }
@@ -34,11 +35,36 @@ rootProject.name = 'FitApp'
 
 include ':app'
 
-// Include React Native Android build locally (per RN 0.74.x)
+// React Native Android
 def reactNativeAndroidDir = new File(rootDir, "../node_modules/react-native/android")
 if (reactNativeAndroidDir.exists()) {
     includeBuild(reactNativeAndroidDir)
 }
 
-// Include gradle plugin build
+// React Native Gradle Plugin
 includeBuild(new File(["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim()).getParentFile())
+
+// Aggiungi queste dipendenze manualmente
+include ':react-native-sqlite-storage'
+project(':react-native-sqlite-storage').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-sqlite-storage/platforms/android')
+
+include ':react-native-vector-icons'
+project(':react-native-vector-icons').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-vector-icons/android')
+
+// Firebase e altre dipendenze native
+include ':react-native-firebase_app'
+project(':react-native-firebase_app').projectDir = new File(rootProject.projectDir, '../node_modules/@react-native-firebase/app/android')
+
+// Verifica esistenza dei moduli prima di includerli
+def safeInclude = { String moduleName, String path ->
+    def moduleDir = new File(rootProject.projectDir, path)
+    if (moduleDir.exists()) {
+        include ":$moduleName"
+        project(":$moduleName").projectDir = moduleDir
+    } else {
+        println "⚠️ Modulo $moduleName non trovato in $path"
+    }
+}
+
+safeInclude('react-native-gesture-handler', '../node_modules/react-native-gesture-handler/android')
+safeInclude('react-native-reanimated', '../node_modules/react-native-reanimated/android')
