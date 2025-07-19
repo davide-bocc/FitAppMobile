@@ -6,18 +6,21 @@ buildscript {
         targetSdkVersion = 34
         kotlinVersion = "1.9.22"
         gradleVersion = "8.3.0"
-        firebaseBomVersion = "33.0.0"
+        firebaseBomVersion = "32.7.0"
         ndkVersion = "25.2.9519653"
     }
     repositories {
         google()
         mavenCentral()
+        maven { url 'https://maven.google.com' }
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
     }
     dependencies {
         classpath "com.android.tools.build:gradle:$gradleVersion"
         classpath "com.google.gms:google-services:4.4.1"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
         classpath "com.facebook.react:react-native-gradle-plugin:0.74.5"
+        classpath "com.google.firebase:firebase-crashlytics-gradle:2.9.9"
     }
 }
 
@@ -26,12 +29,7 @@ allprojects {
         google()
         mavenCentral()
         maven { url("https://www.jitpack.io") }
-        maven {
-            url "$rootDir/../node_modules/react-native/android"
-        }
-        maven {
-            url "$rootDir/../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"
-        }
+        maven { url("https://oss.sonatype.org/content/repositories/snapshots/") }
     }
 }
 
@@ -42,7 +40,18 @@ subprojects {
                 compileSdkVersion rootProject.ext.compileSdkVersion
                 ndkVersion rootProject.ext.ndkVersion
                 buildToolsVersion rootProject.ext.buildToolsVersion
+                defaultConfig {
+                    minSdkVersion rootProject.ext.minSdkVersion
+                    targetSdkVersion rootProject.ext.targetSdkVersion
+                }
             }
         }
     }
 }
+
+// RIMUOVI la forzatura della versione di react-native per evitare conflitti
+// configurations.all {
+//     resolutionStrategy {
+//         force "com.facebook.react:react-native:0.74.5"
+//     }
+// }

@@ -1,12 +1,19 @@
 apply plugin: "com.android.application"
 apply plugin: "com.facebook.react"
 apply plugin: "com.google.gms.google-services"
+apply plugin: "com.google.firebase.crashlytics"
 apply plugin: "org.jetbrains.kotlin.android"
 
-react {
-    reactNativeDir = rootProject.file("../node_modules/react-native")
-    codegenDir = rootProject.file("../node_modules/react-native-codegen")
-}
+/**
+ * Configurazione React Native
+ * (Formato compatibile con React Native 0.74+)
+ */
+project.ext.react = [
+    enableHermes: true,  // Abilita Hermes
+    hermesCommand: "../../node_modules/hermes-engine/%OS-BIN%/hermesc",
+    codegenDir: "../../node_modules/react-native-codegen",
+    cliPath: "../../node_modules/react-native/cli.js"
+]
 
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
@@ -52,11 +59,17 @@ android {
         release {
             signingConfig signingConfigs.release
             minifyEnabled true
-            shrinkResources true
+            shrinkResources false
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
             zipAlignEnabled true
             debuggable false
-            crunchPngs true
+
+            // Configurazione Firebase Crashlytics
+            firebaseCrashlytics {
+                nativeSymbolUploadEnabled true
+                strippedNativeLibsDir "build/intermediates/stripped_native_libs/release/out/lib"
+                unstrippedNativeLibsDir "build/intermediates/merged_native_libs/release/out/lib"
+            }
         }
     }
 
@@ -66,6 +79,7 @@ android {
         pickFirst "**/libhermes.so"
         pickFirst "**/libreactnativejni.so"
         exclude "META-INF/**"
+        exclude "**/libreact_nativemodule_core.so"
     }
 
     compileOptions {
@@ -87,10 +101,11 @@ dependencies {
     implementation(project(":react-native-sqlite-storage"))
 
     // Firebase
-    implementation platform("com.google.firebase:firebase-bom:33.0.0")
-    implementation "com.google.firebase:firebase-firestore"
-    implementation "com.google.firebase:firebase-auth"
-    implementation "com.google.firebase:firebase-analytics"
+    implementation platform("com.google.firebase:firebase-bom:32.7.0")
+    implementation "com.google.firebase:firebase-firestore-ktx"
+    implementation "com.google.firebase:firebase-auth-ktx"
+    implementation "com.google.firebase:firebase-analytics-ktx"
+    implementation "com.google.firebase:firebase-crashlytics-ndk"
 
     // React Native
     implementation "com.facebook.react:react-android:0.74.5"
@@ -100,7 +115,6 @@ dependencies {
     implementation "androidx.core:core-ktx:1.12.0"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
     implementation "com.android.support:multidex:2.0.1"
-    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
 }
 
 apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")

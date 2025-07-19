@@ -1,20 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  Button,
-  FlatList,
-  StyleSheet,
-  Alert,
-  Modal,
-  TouchableOpacity
-} from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import LocalDB from '../../../database/local/LocalDB';
-import { collection, addDoc, getDocs } from 'firebase/firestore';
-import { db } from '../../../database/firebase/firebaseConfig';
+import { collection, addDoc, writeBatch } from 'firebase/firestore';
+import { db, fetchWithCache } from '../../../database/firebase/firebaseConfig';
 
 const WorkoutScreen = ({ navigation }) => {
   const [workout, setWorkout] = useState({
@@ -22,41 +10,53 @@ const WorkoutScreen = ({ navigation }) => {
     exercises: []
   });
   const [availableExercises, setAvailableExercises] = useState([]);
-  const [newExercise, setNewExercise] = useState({
-    id: '',
-    sets: 3,
-    reps: 10,
-    restTime: 60
-  });
-  const [isExerciseModalVisible, setIsExerciseModalVisible] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
 
-  // Carica esercizi disponibili
+  // Carica esercizi con cache
   useEffect(() => {
     const loadExercises = async () => {
       try {
-        // 1. Carica da cache locale
-        const localExercises = await LocalDB.find('exercises');
-
-        if (localExercises.length > 0) {
-          setAvailableExercises(localExercises);
-          setNewExercise(prev => ({ ...prev, id: localExercises[0]?.id || '' }));
-        }
-
-        // 2. Sincronizza con Firebase
-        const snapshot = await getDocs(collection(db, 'exercises'));
-        const remoteExercises = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-
-        setAvailableExercises(remoteExercises);
-        await LocalDB.bulkInsert('exercises', remoteExercises);
+        const exercises = await fetchWithCache('exercises');
+        setAvailableExercises(exercises);
       } catch (error) {
         console.error('Error loading exercises:', error);
-        Alert.alert('Errore', 'Impossibile caricare gli esercizi');
+        const localExercises = await LocalDB.find('exercises');
+        setAvailableExercises(localExercises);
       }
     };
+    loadExercises();
+  }, []);
+
+  // Salvataggio ottimizzato
+  const handleSaveWorkout = async () => {
+    const workoutData = {
+      name: workout.name,
+      exercises: workout.exercises,
+      createdAt: new Date().toISOString()
+    };
+
+    try {
+      // 1. Salva in locale
+      await LocalDB.create('workouts', workoutData);
+
+      // 2. Sincronizza con Firebase solo se connessione disponibile
+      if (navigator.onLine) {
+        const docRef = await addDoc(collection(db, 'workouts'), workoutData);
+        await LocalDB.update('workouts', workoutData.id, {
+          firebase_id: docRef.id,
+          synced: true
+        });
+      } else {
+        await LocalDB.update('workouts', workoutData.id, { synced: false });
+      }
+
+      Alert.alert('Successo', 'Workout salvato!');
+      navigation.goBack();
+    } catch (error) {
+      console.error('Save error:', error);
+      Alert.alert('Errore', 'Salvataggio fallito');
+    }
+  };
+
 
     loadExercises();
   }, []);

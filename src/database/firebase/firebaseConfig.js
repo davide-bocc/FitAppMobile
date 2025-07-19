@@ -1,54 +1,85 @@
-import { initializeApp } from 'firebase/app';
-import {
-  getAuth,
-  connectAuthEmulator,
-  initializeAuth,
-  getReactNativePersistence
-} from 'firebase/auth';
-import {
-  getFirestore,
-  connectFirestoreEmulator,
-  enableIndexedDbPersistence,
-  CACHE_SIZE_UNLIMITED
-} from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
+import { View, Text, FlatList, Button, StyleSheet } from 'react-native';
+import { query, where, collection } from 'firebase/firestore';
+import { auth, fetchWithCache } from '../../../database/firebase/firebaseConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.FIREBASE_PROJECT_ID,
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.FIREBASE_SENDER_ID,
-  appId: process.env.FIREBASE_APP_ID,
-  measurementId: process.env.FIREBASE_MEASUREMENT_ID
+const UserHomeScreen = ({ navigation }) => {
+  const userId = auth.currentUser?.uid;
+  const [assignedWorkouts, setAssignedWorkouts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const loadWorkouts = async () => {
+      try {
+        setLoading(true);
+
+        // Usa il fetcher con cache
+        const workouts = await fetchWithCache(
+          'assignments',
+          [where('studentId', '==', userId)]
+        );
+
+        setAssignedWorkouts(workouts);
+        setLoading(false);
+      } catch (err) {
+        console.error('Failed to load workouts:', err);
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+
+    if (userId) {
+      loadWorkouts();
+    }
+  }, [userId]);
+
+  const startWorkout = (workoutId) => {
+    // Log dell'avvio workout
+    console.log(`Starting workout ${workoutId} at ${new Date().toISOString()}`);
+    navigation.navigate('ExecuteWorkout', { workoutId });
+  };
+
+  if (loading) return <Text>Caricamento...</Text>;
+  if (error) return <Text>Errore: {error}</Text>;
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>I tuoi Workout assegnati</Text>
+
+      {assignedWorkouts.length === 0 ? (
+        <Text>Nessun workout assegnato</Text>
+      ) : (
+        <FlatList
+          data={assignedWorkouts}
+          keyExtractor={item => item.id}
+          renderItem={({ item }) => (
+            <View style={styles.workoutItem}>
+              <Text style={styles.workoutName}>{item.workout?.name}</Text>
+              <Text>Esercizi: {item.workout?.exercises?.length || 0}</Text>
+              <Button
+                title="Inizia"
+                onPress={() => startWorkout(item.workoutId)}
+              />
+            </View>
+          )}
+        />
+      )}
+    </View>
+  );
 };
 
-// Inizializzazione con persistenza
-const app = initializeApp(firebaseConfig);
-
-const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(AsyncStorage)
+const styles = StyleSheet.create({
+  container: { flex: 1, padding: 20 },
+  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 20 },
+  workoutItem: {
+    padding: 15,
+    marginBottom: 10,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 5
+  },
+  workoutName: { fontWeight: 'bold', fontSize: 16 }
 });
 
-const db = getFirestore(app);
-db.settings({
-  cacheSizeBytes: CACHE_SIZE_UNLIMITED
-});
-
-// Abilita persistenza offline
-enableIndexedDbPersistence(db)
-  .catch((err) => {
-    if (err.code === 'failed-precondition') {
-      console.warn("Multi-tab persistence not supported");
-    } else if (err.code === 'unimplemented') {
-      console.warn("Browser does not support offline persistence");
-    }
-  });
-
-// Configurazione emulator solo in sviluppo
-if (__DEV__) {
-  connectAuthEmulator(auth, 'http://localhost:9099');
-  connectFirestoreEmulator(db, 'localhost', 8080);
-}
-
-export { auth, db };
+export default UserHomeScreen;

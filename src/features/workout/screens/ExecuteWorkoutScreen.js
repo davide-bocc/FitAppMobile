@@ -4,7 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import LocalDB from '../../../database/local/LocalDB';
 import TimerService from '../services/TimerService';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../../../database/firebase/firebaseConfig';
+import { db, fetchWithCache } from '../../../database/firebase/firebaseConfig';
 
 const ExecuteWorkoutScreen = ({ route, navigation }) => {
   const { workoutId } = route.params;
@@ -15,48 +15,34 @@ const ExecuteWorkoutScreen = ({ route, navigation }) => {
     isResting: false,
     timeLeft: 0
   });
-  const [progress, setProgress] = useState(0);
   const timerRef = useRef(null);
 
-  // Carica il workout con priorità alla cache locale
+  // Carica il workout con cache avanzata
   const loadWorkout = async () => {
     try {
-      // 1. Prova a caricare dalla cache locale
-      const localWorkout = await LocalDB.get('workouts', workoutId);
+      // Usa il sistema di cache centralizzato
+      const cachedWorkout = await fetchWithCache('workouts', [], workoutId);
 
-      if (localWorkout) {
-        setWorkout(localWorkout);
+      if (cachedWorkout) {
+        setWorkout(cachedWorkout);
         return;
       }
 
-      // 2. Fallback al server se non trovato in locale
-      const docRef = doc(db, 'workouts', workoutId);
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        const serverWorkout = { id: docSnap.id, ...docSnap.data() };
-        await LocalDB.create('workouts', serverWorkout);
-        setWorkout(serverWorkout);
-      } else {
-        Alert.alert('Errore', 'Workout non trovato');
-        navigation.goBack();
-      }
+      Alert.alert('Errore', 'Workout non trovato');
+      navigation.goBack();
     } catch (error) {
       console.error('Load workout error:', error);
-      Alert.alert('Errore', 'Impossibile caricare il workout');
-      navigation.goBack();
+      Alert.alert('Errore', 'Connessione assente - usando dati locali');
+      const localWorkout = await LocalDB.get('workouts', workoutId);
+      if (localWorkout) setWorkout(localWorkout);
     }
   };
 
-  // Gestione timer e cleanup
+  // Cleanup timer
   useFocusEffect(
     React.useCallback(() => {
       loadWorkout();
-
-      return () => {
-        TimerService.stopAllTimers();
-        if (timerRef.current) clearInterval(timerRef.current);
-      };
+      return () => TimerService.cleanup();
     }, [workoutId])
   );
 

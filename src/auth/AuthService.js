@@ -1,114 +1,118 @@
+import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
-  signOut
+  signOut,
+  onAuthStateChanged
 } from 'firebase/auth';
 import { auth } from '../../database/firebase/firebaseConfig';
 import UserModel from '../models/UserModel';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Cache keys
+const AUTH_CACHE_KEY = 'auth_user_data';
+const TOKEN_CACHE_KEY = 'auth_token_cache';
+const TOKEN_TTL = 30 * 60 * 1000; // 30 minuti
 
 export const AuthService = {
   async register(email, password, userData) {
     try {
-      // Solo operazione Firebase (Firestore gestisce il resto via triggers)
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+      // 1. Operazione Firebase obbligatoria
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
-      // Salvataggio offline immediato
-      await UserModel.saveUserLocal({
+      // 2. Salvataggio offline con timestamp
+      const userToSave = {
         uid: userCredential.user.uid,
         email,
-        ...userData
-      });
-
-      return {
-        success: true,
-        user: userCredential.user
+        ...userData,
+        lastSync: Date.now()
       };
+
+      await Promise.all([
+        UserModel.saveUserLocal(userToSave),
+        AsyncStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(userToSave))
+      ]);
+
+      return { success: true, user: userCredential.user };
     } catch (error) {
       console.error('Registration error:', error);
-      return {
-        success: false,
-        error: this._mapFirebaseError(error)
-      };
+      return { success: false, error: this._mapFirebaseError(error) };
     }
   },
 
   async login(email, password) {
     try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+      // 1. Verifica credenziali con Firebase
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
-      // Caricamento dati da cache locale prima
+      // 2. Carica dati utente con priorità alla cache
       let user = await UserModel.getUserLocal(userCredential.user.uid);
 
-      if (!user) {
+      if (!user || Date.now() - user.lastSync > 3600000) { // 1 ora TTL
         user = await UserModel.getUserRemote(userCredential.user.uid);
       }
 
-      return {
-        success: true,
-        user
-      };
+      // 3. Aggiorna cache auth
+      await AsyncStorage.setItem(AUTH_CACHE_KEY, JSON.stringify({
+        uid: userCredential.user.uid,
+        email: userCredential.user.email,
+        lastSync: Date.now()
+      }));
+
+      return { success: true, user };
     } catch (error) {
-      return {
-        success: false,
-        error: this._mapFirebaseError(error)
-      };
-    }
-  },
-
-  async login(email, password) {
-    try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-
-      // Recupera dati aggiuntivi dal tuo backend
-      const backendResponse = await fetch(`${API_BASE_URL}/user`, {
-        headers: {
-          'Authorization': `Bearer ${await userCredential.user.getIdToken()}`
+      // Fallback offline solo se errore di rete
+      if (error.code === 'auth/network-request-failed') {
+        const cachedUser = await this._checkAuthCache();
+        if (cachedUser && cachedUser.email === email) {
+          return { success: true, user: cachedUser };
         }
-      });
-
-      if (!backendResponse.ok) {
-        throw new Error('Failed to fetch user data');
       }
-
-      const userData = await backendResponse.json();
-
-      return {
-        success: true,
-        user: {
-          uid: userCredential.user.uid,
-          email: userCredential.user.email,
-          ...userData
-        }
-      };
-
-    } catch (error) {
-      console.error('Login error:', error);
-      return {
-        success: false,
-        error: this._mapFirebaseError(error)
-      };
+      return { success: false, error: this._mapFirebaseError(error) };
     }
   },
 
   async logout() {
     try {
       await signOut(auth);
+      await AsyncStorage.multiRemove([AUTH_CACHE_KEY, TOKEN_CACHE_KEY]);
       return { success: true };
     } catch (error) {
       return { success: false, error: error.message };
     }
+  },
+
+  async getCurrentUserToken() {
+    try {
+      // Controlla cache token
+      const cachedToken = await AsyncStorage.getItem(TOKEN_CACHE_KEY);
+      if (cachedToken) {
+        const { token, timestamp } = JSON.parse(cachedToken);
+        if (Date.now() - timestamp < TOKEN_TTL) {
+          return token;
+        }
+      }
+
+      // Nuovo token se scaduto
+      const user = auth.currentUser;
+      if (!user) return null;
+
+      const token = await user.getIdToken();
+      await AsyncStorage.setItem(TOKEN_CACHE_KEY, JSON.stringify({
+        token,
+        timestamp: Date.now()
+      }));
+
+      return token;
+    } catch (error) {
+      console.error('Token error:', error);
+      return null;
+    }
+  },
+
+  async _checkAuthCache() {
+    const cached = await AsyncStorage.getItem(AUTH_CACHE_KEY);
+    return cached ? JSON.parse(cached) : null;
   },
 
   async resetPassword(email) {

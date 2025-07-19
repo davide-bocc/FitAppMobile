@@ -1,25 +1,44 @@
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../../database/firebase/firebaseConfig';
+import { db, fetchWithCache } from '../../database/firebase/firebaseConfig';
 import LocalDB from '../../database/local/LocalDB';
 
 export default class UserModel {
   static async getUserLocal(uid) {
-    return LocalDB.get('users', uid);
+    try {
+      return await LocalDB.get('users', uid);
+    } catch (error) {
+      console.error('Local user load error:', error);
+      return null;
+    }
   }
 
   static async getUserRemote(uid) {
-    const docRef = doc(db, 'users', uid);
-    const docSnap = await getDoc(docRef);
+    try {
+      // Usa il sistema di cache centralizzato
+      const user = await fetchWithCache('users', [], uid);
 
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      await LocalDB.set('users', uid, data); // Cache locale
-      return data;
+      if (user) {
+        await LocalDB.set('users', uid, {
+          ...user,
+          lastSync: Date.now()
+        });
+      }
+
+      return user;
+    } catch (error) {
+      console.error('Remote user load error:', error);
+      return null;
     }
-    return null;
   }
 
   static async saveUserLocal(userData) {
-    await LocalDB.set('users', userData.uid, userData);
+    try {
+      await LocalDB.set('users', userData.uid, {
+        ...userData,
+        lastSync: Date.now()
+      });
+    } catch (error) {
+      console.error('User save error:', error);
+    }
   }
 }

@@ -1,34 +1,38 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { AuthService } from '../services/AuthService';
-import useOfflineFirst from '../../hooks/useOfflineFirst';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LoginScreen = ({ navigation }) => {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
-  const { error, loading, handleOperation } = useOfflineFirst();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleLogin = async () => {
-    await handleOperation(
-      async () => {
-        const result = await AuthService.login(
-          credentials.email,
-          credentials.password
-        );
+    setLoading(true);
+    setError(null);
 
-        if (result.success) {
-          navigation.navigate('Home');
-        }
-        return result;
-      },
-      {
-        fallback: () => AuthService.loginOffline(credentials.email)
+    try {
+      // 1. Prova con credenziali Firebase
+      const result = await AuthService.login(credentials.email, credentials.password);
+
+      if (result.success) {
+        navigation.navigate('Home');
+      } else {
+        setError(result.error);
       }
-    );
+    } catch (error) {
+      console.error('Login error:', error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // UI invariata
   return (
     <View style={styles.container}>
-      {/* UI rimane uguale ma usa credentials state */}
+      {/* ... */}
     </View>
   );
 };

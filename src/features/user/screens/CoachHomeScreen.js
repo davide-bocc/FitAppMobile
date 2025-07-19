@@ -1,27 +1,48 @@
 import React from 'react';
-import { View, Text, FlatList, Button, StyleSheet } from 'react-native';
-import useOfflineFirst from '../hooks/useOfflineFirst';
-import { db } from '../../../database/firebase/firebaseConfig';
-import { collection, addDoc } from 'firebase/firestore';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { fetchWithCache } from '../../../database/firebase/firebaseConfig';
 
 const CoachHomeScreen = ({ navigation }) => {
-  const { data: students, loading, error, retry } = useOfflineFirst('users');
-  const { data: workouts } = useOfflineFirst('workouts');
+  const [students, setStudents] = useState([]);
+  const [workouts, setWorkouts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const createNewWorkout = () => {
-    navigation.navigate('CreateWorkout');
-  };
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Carica in parallelo con cache
+        const [fetchedStudents, fetchedWorkouts] = await Promise.all([
+          fetchWithCache('users', [['role', '==', 'student']]),
+          fetchWithCache('workouts')
+        ]);
+
+        setStudents(fetchedStudents);
+        setWorkouts(fetchedWorkouts);
+      } catch (error) {
+        console.error('Load error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
   const assignWorkout = async (studentId, workoutId) => {
     try {
-      await addDoc(collection(db, 'assignments'), {
+      // Batch update per assegnazioni multiple
+      const batch = writeBatch(db);
+      const assignmentRef = doc(collection(db, 'assignments'));
+
+      batch.set(assignmentRef, {
         studentId,
         workoutId,
         assignedAt: new Date().toISOString()
       });
+
+      await batch.commit();
       Alert.alert('Assegnato con successo');
     } catch (error) {
-      Alert.alert('Errore', error.message);
+      console.error('Assignment error:', error);
     }
   };
 
