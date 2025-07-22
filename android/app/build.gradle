@@ -29,16 +29,16 @@ android {
         vectorDrawables.useSupportLibrary = true
 
         ndk {
-            abiFilters "armeabi-v7a", "arm64-v8a" // Rimuovi x86 per ridurre dimensioni APK
+            abiFilters "armeabi-v7a", "arm64-v8a" // rimosso x86 per APK più leggero
         }
     }
 
     signingConfigs {
         debug {
-            storeFile file('debug.keystore')
-            storePassword 'android'
-            keyAlias 'androiddebugkey'
-            keyPassword 'android'
+            storeFile file("my-release-key.keystore")
+            storePassword "Cl1mb!ng.Ks"
+            keyAlias "my-key-alias"
+            keyPassword "Cl1mb!ng.KS"
         }
         release {
             storeFile file('fitapp-release-key.keystore')
@@ -109,7 +109,7 @@ dependencies {
     // Support libraries
     implementation "androidx.core:core-ktx:1.12.0"
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
-    implementation "com.android.support:multidex:2.0.1"
+    implementation "androidx.multidex:multidex:2.0.1"
 
     // React Native libraries
     implementation project(":react-native-vector-icons")
