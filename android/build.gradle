@@ -1,46 +1,53 @@
 buildscript {
     ext {
-        buildToolsVersion = "34.0.0"
-        minSdkVersion = 23
-        compileSdkVersion = 34
-        targetSdkVersion = 34
-        kotlinVersion = "1.9.22"
-        gradleVersion = "8.4.0"
-        firebaseBomVersion = "32.7.0"
-        ndkVersion = "25.2.9519653"
-        reactNativeVersion = "0.74.5"
+        buildToolsVersion     = "34.0.0"
+        minSdkVersion         = 23
+        compileSdkVersion     = 34
+        targetSdkVersion      = 34
+        kotlinVersion         = "1.9.22"
+        gradleVersion         = "8.1.0"
+        firebaseBomVersion    = "32.7.0"
+        ndkVersion            = "25.2.9519653"
+        reactNativeVersion    = "0.75.0"
     }
+
     repositories {
         google()
         mavenCentral()
-        maven { url 'https://maven.google.com' }
+        maven {
+            url = uri("https://maven.pkg.github.com/facebook/react-native")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR") ?: ""
+                password = System.getenv("GITHUB_TOKEN") ?: ""
+            }
+        }
     }
+
     dependencies {
-        classpath "com.android.tools.build:gradle:$gradleVersion"
-        classpath "com.google.gms:google-services:4.3.15"
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
-        classpath "com.facebook.react:react-native-gradle-plugin:$reactNativeVersion"
-        classpath "com.google.firebase:firebase-crashlytics-gradle:2.9.9"
+        classpath("com.android.tools.build:gradle:$gradleVersion")
+        classpath("com.google.gms:google-services:4.4.1")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
+        classpath("com.google.firebase:firebase-crashlytics-gradle:2.9.9")
+        // classpath("com.facebook.react:react-native-gradle-plugin") // opzionale se serve autolinking
     }
 }
 
+// ⛔️ Non definire repositories qui per evitare conflitti con settings.gradle
+
 allprojects {
-    repositories {
-        google()
-        mavenCentral()
-        maven { url("https://www.jitpack.io") }
-    }
+    // repositories {} rimossi per rispettare repositoriesMode dichiarato in settings.gradle
 }
 
 subprojects {
     afterEvaluate { project ->
         if (project.hasProperty("android")) {
-            android {
+            project.android {
                 compileSdkVersion rootProject.ext.compileSdkVersion
-                ndkVersion rootProject.ext.ndkVersion
+                ndkVersion        rootProject.ext.ndkVersion
                 buildToolsVersion rootProject.ext.buildToolsVersion
+
                 defaultConfig {
-                    minSdkVersion rootProject.ext.minSdkVersion
+                    minSdkVersion    rootProject.ext.minSdkVersion
                     targetSdkVersion rootProject.ext.targetSdkVersion
                 }
             }

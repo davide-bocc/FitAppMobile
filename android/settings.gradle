@@ -3,47 +3,61 @@ pluginManagement {
         gradlePluginPortal()
         google()
         mavenCentral()
-        maven {
-            url("${rootDir}/../node_modules/react-native/android")
-        }
+        maven { url "$rootDir/../node_modules/react-native/android" }
+        maven { url "https://www.jitpack.io" }
     }
-    plugins {
-        id("com.android.application") version "7.4.2"
-        id("com.android.library") version "7.4.2"
-        id("org.jetbrains.kotlin.android") version "1.8.22"
-        id("com.facebook.react") version "0.80.1" apply false
+}
+
+includeBuild("../node_modules/react-native/gradle") {
+    dependencySubstitution {
+        substitute(module("com.facebook.react:react-native-gradle-plugin"))
+            .using(project(":"))
     }
 }
 
 dependencyResolutionManagement {
+    // Questa opzione proibisce repository in build.gradle, devono stare qui
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
+        maven { url "$rootDir/../node_modules/react-native/android" }
+        maven { url "https://www.jitpack.io" }
+        maven { url "$rootDir/../node_modules/react-native/gradle" }
+
+        // Repository con credenziali per react-native
         maven {
-            url("${rootDir}/../node_modules/react-native/android")
-        }
-        maven {
-            url("https://www.jitpack.io")
+            url "https://maven.pkg.github.com/facebook/react-native"
+            credentials {
+                username = System.getenv("GITHUB_ACTOR") ?: ""
+                password = System.getenv("GITHUB_TOKEN") ?: ""
+            }
         }
     }
 }
 
 rootProject.name = 'FitApp'
 
-def nodeModulesDir = new File(rootDir, "../node_modules")
-
 include ':app'
+apply from: file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
+applyNativeModulesSettingsGradle(settings)
 
 def includeIfExists(String moduleName, String relativePath) {
-    def moduleDir = new File(nodeModulesDir, relativePath)
+    def moduleDir = new File(ext.nodeModulesDir, relativePath)
     if (moduleDir.exists()) {
         include(":${moduleName}")
         project(":${moduleName}").projectDir = moduleDir
     }
 }
 
+ext {
+    nodeModulesDir = file("${rootDir}/../node_modules")
+}
+
 includeIfExists('react-native-vector-icons', 'react-native-vector-icons/android')
 includeIfExists('react-native-gesture-handler', 'react-native-gesture-handler/android')
 includeIfExists('react-native-reanimated', 'react-native-reanimated/android')
 includeIfExists('react-native-firebase', '@react-native-firebase/app/android')
+include ':react-native-sqlite-storage'
+project(':react-native-sqlite-storage').projectDir = file('../node_modules/react-native-sqlite-storage/android')
 
