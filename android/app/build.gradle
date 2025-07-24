@@ -2,8 +2,6 @@ apply plugin: "com.android.application"
 apply plugin: "com.google.gms.google-services"
 apply plugin: "com.google.firebase.crashlytics"
 apply plugin: "org.jetbrains.kotlin.android"
-//apply from: "../../node_modules/react-native/react.gradle"
-
 
 project.ext.react = [
     enableHermes: true,
@@ -30,7 +28,7 @@ android {
         vectorDrawables.useSupportLibrary = true
 
         ndk {
-            abiFilters "armeabi-v7a", "arm64-v8a" // rimosso x86 per APK più leggero
+            abiFilters "armeabi-v7a", "arm64-v8a"
         }
     }
 
@@ -74,10 +72,18 @@ android {
     }
 
     packagingOptions {
+        // Esclusioni complete per BouncyCastle e conflitti
+        exclude "**/bcprov-jdk*.jar"
+        exclude "**/libjsc.so"
+        exclude "**/libhermes.so"
+        exclude "**/libfbjni.so"
         pickFirst "**/libc++_shared.so"
-        pickFirst "**/libhermes.so"
         exclude "META-INF/**"
-        exclude "**/libreact_nativemodule_core.so"
+        exclude "**/org/bouncycastle/**"
+    }
+
+    aaptOptions {
+        ignoreAssetsPattern "!*.zip:!*.so:!*/armeabi-v7a/*:!*/arm64-v8a/*"
     }
 
     compileOptions {
@@ -95,12 +101,18 @@ android {
 }
 
 dependencies {
-    // React Native core
-    implementation "com.facebook.react:react-android:0.75.0"
-    implementation "com.facebook.react:hermes-android:0.75.0"
+    // React Native core (con esclusioni esplicite)
+    implementation("com.facebook.react:react-android:${rootProject.ext.reactNativeVersion}") {
+        exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
+        exclude group: 'org.bouncycastle', module: 'bcprov-jdk18on'
+    }
+    implementation("com.facebook.react:hermes-android:${rootProject.ext.reactNativeVersion}") {
+        exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
+        exclude group: 'org.bouncycastle', module: 'bcprov-jdk18on'
+    }
 
-    // Firebase
-    implementation platform("com.google.firebase:firebase-bom:32.7.0")
+    // Firebase (senza dipendenze crittografiche ridondanti)
+    implementation platform("com.google.firebase:firebase-bom:${rootProject.ext.firebaseBomVersion}")
     implementation "com.google.firebase:firebase-firestore"
     implementation "com.google.firebase:firebase-auth"
     implementation "com.google.firebase:firebase-analytics"
@@ -115,9 +127,9 @@ dependencies {
     // React Native libraries
     implementation project(":react-native-vector-icons")
     implementation project(":react-native-sqlite-storage")
+    //implementation "com.facebook.react:react-native:0.71.+"
 }
 
 apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")
 apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
 applyNativeModulesAppBuildGradle(project)
-

@@ -1,0 +1,12 @@
+diff --git a/node_modules/react-native-sqlite-storage/platforms/android/build.gradle b/node_modules/react-native-sqlite-storage/platforms/android/build.gradle
+index ff79b10..d691efb 100644
+--- a/node_modules/react-native-sqlite-storage/platforms/android/build.gradle
++++ b/node_modules/react-native-sqlite-storage/platforms/android/build.gradle
+@@ -16,6 +16,7 @@ def safeExtGet(prop, fallback) {
+ }
+ 
+ android {
++    namespace "org.pgsqlite"
+     compileSdkVersion safeExtGet('compileSdkVersion', 23)
+     buildToolsVersion safeExtGet('buildToolsVersion', '27.0.3')
+ 
