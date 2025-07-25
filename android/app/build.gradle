@@ -127,7 +127,8 @@ dependencies {
     // React Native libraries
     implementation project(":react-native-vector-icons")
     implementation project(":react-native-sqlite-storage")
-    //implementation "com.facebook.react:react-native:0.71.+"
+    implementation("com.facebook.react:react-native:${rootProject.ext.reactNativeVersion}")
+
 }
 
 apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")

@@ -5,7 +5,7 @@ buildscript {
         compileSdkVersion = 34
         targetSdkVersion = 34
         kotlinVersion = "1.9.22"
-        gradleVersion = "8.6.0"
+        gradleVersion = "8.8.0"
         firebaseBomVersion = "32.7.0"
         ndkVersion = "25.2.9519653"
         reactNativeVersion = "0.75.0"
