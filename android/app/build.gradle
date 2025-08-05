@@ -26,10 +26,7 @@ android {
         resValue "string", "build_config_package", "fit.app.mobile"
         multiDexEnabled true
         vectorDrawables.useSupportLibrary = true
-
-        ndk {
-            abiFilters "armeabi-v7a", "arm64-v8a"
-        }
+        ndkVersion rootProject.ext.ndkVersion
     }
 
     signingConfigs {
@@ -64,7 +61,7 @@ android {
             resValue "string", "CodePushDeploymentKey", '""'
 
             firebaseCrashlytics {
-                nativeSymbolUploadEnabled true
+                //nativeSymbolUploadEnabled true
                 strippedNativeLibsDir "build/intermediates/stripped_native_libs/release/out/lib"
                 unstrippedNativeLibsDir "build/intermediates/merged_native_libs/release/out/lib"
             }
@@ -75,7 +72,6 @@ android {
         // Esclusioni complete per BouncyCastle e conflitti
         exclude "**/bcprov-jdk*.jar"
         exclude "**/libjsc.so"
-        exclude "**/libhermes.so"
         exclude "**/libfbjni.so"
         pickFirst "**/libc++_shared.so"
         exclude "META-INF/**"
@@ -106,10 +102,12 @@ dependencies {
         exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
         exclude group: 'org.bouncycastle', module: 'bcprov-jdk18on'
     }
-    implementation("com.facebook.react:hermes-android:${rootProject.ext.reactNativeVersion}") {
+    implementation("com.facebook.react:hermes-android:${rootProject.ext.hermesEngineVersion}") {
         exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
         exclude group: 'org.bouncycastle', module: 'bcprov-jdk18on'
     }
+
+
 
     // Firebase (senza dipendenze crittografiche ridondanti)
     implementation platform("com.google.firebase:firebase-bom:${rootProject.ext.firebaseBomVersion}")
@@ -127,8 +125,6 @@ dependencies {
     // React Native libraries
     implementation project(":react-native-vector-icons")
     implementation project(":react-native-sqlite-storage")
-    implementation("com.facebook.react:react-native:${rootProject.ext.reactNativeVersion}")
-
 }
 
 apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")

@@ -1,0 +1,12 @@
+diff --git a/node_modules/react-native-sqlite-2/android/build.gradle b/node_modules/react-native-sqlite-2/android/build.gradle
+index 64a9a64..e0bb646 100644
+--- a/node_modules/react-native-sqlite-2/android/build.gradle
++++ b/node_modules/react-native-sqlite-2/android/build.gradle
+@@ -22,6 +22,7 @@ def getExtOrIntegerDefault(name) {
+ }
+ 
+ android {
++  namespace "org.pgsqlite"
+   compileSdkVersion getExtOrIntegerDefault('compileSdkVersion')
+   buildToolsVersion getExtOrDefault('buildToolsVersion')
+   ndkVersion getExtOrDefault('ndkVersion')

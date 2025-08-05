@@ -1,38 +1,14 @@
-import { openDatabase } from 'react-native-sqlite-storage';
+import SQLite from 'react-native-sqlite-2';
 
-// Configurazione con error handling migliorato
-const dbConfig = {
+const db = SQLite.openDatabase({
   name: 'fitapp_v2.db',
   location: 'default',
-  createFromLocation: '~www/fitapp_preload.db', // File precaricato (opzionale)
-};
+  createFromLocation: '~www/fitapp_preload.db', // opzionale
+});
 
-const db = openDatabase(dbConfig);
-
-// Cache della connessione con ripristino automatico
-let dbInstance = null;
-let isInitialized = false;
-
-const initDB = async () => {
-  if (!isInitialized) {
-    await new Promise((resolve, reject) => {
-      db.transaction(tx => {
-        dbInstance = tx;
-        isInitialized = true;
-        resolve();
-      }, (error) => {
-        console.error('Database init error:', error);
-        reject(error);
-      });
-    });
-  }
-  return dbInstance;
-};
-
-export const executeQuery = async (sql, params = []) => {
-  try {
-    const tx = await initDB();
-    return await new Promise((resolve, reject) => {
+export const executeQuery = (sql, params = []) => {
+  return new Promise((resolve, reject) => {
+    db.transaction(tx => {
       tx.executeSql(
         sql,
         params,
@@ -42,35 +18,33 @@ export const executeQuery = async (sql, params = []) => {
           reject(error);
         }
       );
+    },
+    error => {
+      console.error('Transaction error:', error);
+      reject(error);
     });
-  } catch (error) {
-    console.error('DB Connection Error:', error);
-    throw error;
-  }
-};
-
-export const executeTransaction = async (queries) => {
-  const tx = await initDB();
-  return new Promise((resolve, reject) => {
-    tx.transaction(
-      transaction => {
-        queries.forEach(({ query, params }) => {
-          transaction.executeSql(query, params);
-        });
-      },
-      error => {
-        console.error('Transaction Error:', error);
-        reject(error);
-      },
-      resolve
-    );
   });
 };
 
-// Utility per debugging
-export const inspectDB = async () => {
-  const [tables] = await executeQuery(
-    "SELECT name FROM sqlite_master WHERE type='table'"
-  );
-  console.log('Database Tables:', tables.rows.raw());
+export const executeTransaction = (queries) => {
+  return new Promise((resolve, reject) => {
+    db.transaction(tx => {
+      queries.forEach(({ query, params }) => {
+        tx.executeSql(query, params);
+      });
+    },
+    error => {
+      console.error('Transaction Error:', error);
+      reject(error);
+    },
+    resolve);
+  });
+};
+
+export const inspectDB = () => {
+  return executeQuery("SELECT name FROM sqlite_master WHERE type='table'")
+    .then(result => {
+      console.log('Database Tables:', result.rows.raw());
+      return result.rows.raw();
+    });
 };

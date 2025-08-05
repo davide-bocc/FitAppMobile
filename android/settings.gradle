@@ -3,30 +3,27 @@ pluginManagement {
         gradlePluginPortal()
         google()
         mavenCentral()
-        maven { url "$rootDir/../node_modules/react-native/android" }
-        maven { url "https://www.jitpack.io" }
-    }
-}
-
-includeBuild("../node_modules/react-native/gradle") {
-    dependencySubstitution {
-        substitute(module("com.facebook.react:react-native-gradle-plugin"))
-            .using(project(":"))
+        maven { url("$rootDir/../node_modules/react-native/android") }
+        maven { url("https://www.jitpack.io") }
     }
 }
 
 dependencyResolutionManagement {
+    // Impone l'uso dei repository centrali per evitare conflitti
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+
     repositories {
         google()
         mavenCentral()
-        maven { url "$rootDir/../node_modules/react-native/android" }
-        maven { url "https://www.jitpack.io" }
+        maven { url("$rootDir/../node_modules/react-native/android") }
+        maven { url("https://www.jitpack.io") }
+
+        // Solo se necessario per Facebook React Native
         maven {
-            url "https://maven.pkg.github.com/facebook/react-native"
+            url("https://maven.pkg.github.com/facebook/react-native")
             credentials {
-                username = System.getenv("GITHUB_ACTOR") ?: ""
-                password = System.getenv("GITHUB_TOKEN") ?: ""
+                username = System.getenv("GITHUB_ACTOR") //?: ""
+                password = System.getenv("GITHUB_TOKEN") //?: ""
             }
         }
     }
@@ -35,9 +32,12 @@ dependencyResolutionManagement {
 rootProject.name = 'FitApp'
 
 include ':app'
+
+// Configurazione moduli nativi CLI
 apply from: file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
 applyNativeModulesSettingsGradle(settings)
 
+// Funzione helper per includere moduli condizionalmente
 def includeIfExists(String moduleName, String relativePath) {
     def moduleDir = new File("${rootDir}/../node_modules/${relativePath}")
     if (moduleDir.exists()) {
@@ -46,10 +46,25 @@ def includeIfExists(String moduleName, String relativePath) {
     }
 }
 
+// Inclusione moduli nativi comuni
 includeIfExists('react-native-vector-icons', 'react-native-vector-icons/android')
 includeIfExists('react-native-gesture-handler', 'react-native-gesture-handler/android')
 includeIfExists('react-native-reanimated', 'react-native-reanimated/android')
 includeIfExists('react-native-firebase', '@react-native-firebase/app/android')
+
+// Moduli con percorsi speciali
 include ':react-native-sqlite-storage'
 project(':react-native-sqlite-storage').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-sqlite-storage/platforms/android')
 
+
+// Includi React Native e il suo plugin gradle
+includeBuild("../node_modules/react-native") {
+    dependencySubstitution {
+        substitute(module("com.facebook.react:react-native"))
+            .using(project(":"))
+        substitute(module("com.facebook.react:react-native-gradle-plugin"))
+            .using(project(":"))
+    }
+}
+
+includeBuild("../node_modules/react-native-gradle-plugin")
