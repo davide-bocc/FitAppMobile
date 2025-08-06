@@ -61,7 +61,6 @@ android {
             resValue "string", "CodePushDeploymentKey", '""'
 
             firebaseCrashlytics {
-                //nativeSymbolUploadEnabled true
                 strippedNativeLibsDir "build/intermediates/stripped_native_libs/release/out/lib"
                 unstrippedNativeLibsDir "build/intermediates/merged_native_libs/release/out/lib"
             }
@@ -69,7 +68,6 @@ android {
     }
 
     packagingOptions {
-        // Esclusioni complete per BouncyCastle e conflitti
         exclude "**/bcprov-jdk*.jar"
         exclude "**/libjsc.so"
         exclude "**/libfbjni.so"
@@ -89,6 +87,13 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
+        freeCompilerArgs += [
+            "-Xskip-metadata-version-check",
+            "-Xsuppress-version-warnings",
+            "-Xallow-result-return-type"
+        ]
+        apiVersion = "1.8"
+        languageVersion = "1.8"
     }
 
     buildFeatures {
@@ -97,7 +102,7 @@ android {
 }
 
 dependencies {
-    // React Native core (con esclusioni esplicite)
+    // React Native core
     implementation("com.facebook.react:react-android:${rootProject.ext.reactNativeVersion}") {
         exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
         exclude group: 'org.bouncycastle', module: 'bcprov-jdk18on'
@@ -107,9 +112,7 @@ dependencies {
         exclude group: 'org.bouncycastle', module: 'bcprov-jdk18on'
     }
 
-
-
-    // Firebase (senza dipendenze crittografiche ridondanti)
+    // Firebase
     implementation platform("com.google.firebase:firebase-bom:${rootProject.ext.firebaseBomVersion}")
     implementation "com.google.firebase:firebase-firestore"
     implementation "com.google.firebase:firebase-auth"
@@ -125,6 +128,26 @@ dependencies {
     // React Native libraries
     implementation project(":react-native-vector-icons")
     implementation project(":react-native-sqlite-storage")
+}
+
+configurations.all {
+    resolutionStrategy {
+        // Forza tutte le lib Kotlin a 1.8.22
+        force(
+            "org.jetbrains.kotlin:kotlin-stdlib:1.8.22",
+            "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22",
+            "org.jetbrains.kotlin:kotlin-reflect:1.8.22",
+            "org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.8.22"
+        )
+    }
+}
+
+// Aggiungi questa configurazione per il plugin Kotlin
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    kotlinOptions {
+        apiVersion = "1.8"
+        languageVersion = "1.8"
+    }
 }
 
 apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")

@@ -58,6 +58,7 @@ project(':react-native-sqlite-storage').projectDir = new File(rootProject.projec
 
 
 // Includi React Native e il suo plugin gradle
+
 includeBuild("../node_modules/react-native") {
     dependencySubstitution {
         substitute(module("com.facebook.react:react-native"))
@@ -68,3 +69,4 @@ includeBuild("../node_modules/react-native") {
 }
 
 includeBuild("../node_modules/react-native-gradle-plugin")
+
