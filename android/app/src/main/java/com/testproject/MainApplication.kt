@@ -10,6 +10,7 @@ import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.load
 import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
 import com.facebook.react.defaults.DefaultReactNativeHost
 import com.facebook.soloader.SoLoader
+import com.swmansion.reanimated.ReanimatedJSIModulePackage  // Import necessario per Reanimated
 
 class MainApplication : Application(), ReactApplication {
 
@@ -17,7 +18,7 @@ class MainApplication : Application(), ReactApplication {
       object : DefaultReactNativeHost(this) {
         override fun getPackages(): List<ReactPackage> =
             PackageList(this).packages.apply {
-              // Packages that cannot be autolinked yet can be added manually here, for example:
+              // Packages che non si auto-linkano si possono aggiungere qui, ad esempio:
               // add(MyReactNativePackage())
             }
 
@@ -27,6 +28,9 @@ class MainApplication : Application(), ReactApplication {
 
         override val isNewArchEnabled: Boolean = BuildConfig.IS_NEW_ARCHITECTURE_ENABLED
         override val isHermesEnabled: Boolean = BuildConfig.IS_HERMES_ENABLED
+
+        // Questo è essenziale per React Native Reanimated con Hermes
+        override fun getJSIModulePackage() = ReanimatedJSIModulePackage()
       }
 
   override val reactHost: ReactHost
@@ -36,7 +40,7 @@ class MainApplication : Application(), ReactApplication {
     super.onCreate()
     SoLoader.init(this, false)
     if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
-      // If you opted-in for the New Architecture, we load the native entry point for this app.
+      // Se hai abilitato la nuova architettura, carichiamo l’entry point nativo
       load()
     }
   }

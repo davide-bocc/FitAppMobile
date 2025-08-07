@@ -99,10 +99,17 @@ android {
     buildFeatures {
         buildConfig true
     }
+
+    sourceSets {
+        getByName("main").java.srcDirs(
+            "src/main/java",
+            "src/main/kotlin"
+        )
+    }
 }
 
 dependencies {
-    // React Native core
+    // React Native core — non usare com.facebook.react:react-native, usa react-android e hermes con versioni esplicite
     implementation("com.facebook.react:react-android:${rootProject.ext.reactNativeVersion}") {
         exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
         exclude group: 'org.bouncycastle', module: 'bcprov-jdk18on'
@@ -112,37 +119,38 @@ dependencies {
         exclude group: 'org.bouncycastle', module: 'bcprov-jdk18on'
     }
 
-    // Firebase
+    // Firebase — usa BOM per gestire versioni
     implementation platform("com.google.firebase:firebase-bom:${rootProject.ext.firebaseBomVersion}")
-    implementation "com.google.firebase:firebase-firestore"
-    implementation "com.google.firebase:firebase-auth"
     implementation "com.google.firebase:firebase-analytics"
+    implementation "com.google.firebase:firebase-auth"
+    implementation "com.google.firebase:firebase-firestore"
     implementation "com.google.firebase:firebase-crashlytics-ndk"
     implementation "com.google.firebase:firebase-functions"
+
 
     // Support libraries
     implementation "androidx.core:core-ktx:1.12.0"
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
     implementation "androidx.multidex:multidex:2.0.1"
 
-    // React Native libraries
+    // React Native native modules
     implementation project(":react-native-vector-icons")
     implementation project(":react-native-sqlite-storage")
+
 }
 
 configurations.all {
     resolutionStrategy {
-        // Forza tutte le lib Kotlin a 1.8.22
+        // Forza tutte le lib Kotlin a 1.9.22
         force(
-            "org.jetbrains.kotlin:kotlin-stdlib:1.8.22",
-            "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22",
-            "org.jetbrains.kotlin:kotlin-reflect:1.8.22",
-            "org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.8.22"
+            "org.jetbrains.kotlin:kotlin-stdlib:1.9.22",
+            "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.22",
+            "org.jetbrains.kotlin:kotlin-reflect:1.9.22",
+            "org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.9.22"
         )
     }
 }
 
-// Aggiungi questa configurazione per il plugin Kotlin
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
     kotlinOptions {
         apiVersion = "1.8"

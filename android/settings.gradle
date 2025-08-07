@@ -1,10 +1,26 @@
 pluginManagement {
+    includeBuild("../node_modules/@react-native/gradle-plugin")
+
+    plugins {
+        id("com.facebook.react") version "0.75.1"
+        id "org.jetbrains.kotlin.jvm" version "1.9.24"
+    }
+
     repositories {
         gradlePluginPortal()
         google()
         mavenCentral()
         maven { url("$rootDir/../node_modules/react-native/android") }
         maven { url("https://www.jitpack.io") }
+    }
+}
+
+// Includi React Native e il suo plugin gradle
+
+includeBuild("../node_modules/react-native") {
+    dependencySubstitution {
+        substitute(module("com.facebook.react:react-native"))
+            .using(project(":"))
     }
 }
 
@@ -17,21 +33,28 @@ dependencyResolutionManagement {
         mavenCentral()
         maven { url("$rootDir/../node_modules/react-native/android") }
         maven { url("https://www.jitpack.io") }
+        maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
 
         // Solo se necessario per Facebook React Native
+        /*
         maven {
             url("https://maven.pkg.github.com/facebook/react-native")
             credentials {
                 username = System.getenv("GITHUB_ACTOR") //?: ""
                 password = System.getenv("GITHUB_TOKEN") //?: ""
             }
-        }
+        }*/
     }
 }
 
 rootProject.name = 'FitApp'
 
 include ':app'
+
+// Include React Native as local project
+//include ':react-native'
+//project(':react-native').projectDir = new File(rootProject.projectDir, '../node_modules/react-native/android')
+
 
 // Configurazione moduli nativi CLI
 apply from: file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
@@ -57,16 +80,8 @@ include ':react-native-sqlite-storage'
 project(':react-native-sqlite-storage').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-sqlite-storage/platforms/android')
 
 
-// Includi React Native e il suo plugin gradle
 
-includeBuild("../node_modules/react-native") {
-    dependencySubstitution {
-        substitute(module("com.facebook.react:react-native"))
-            .using(project(":"))
-        substitute(module("com.facebook.react:react-native-gradle-plugin"))
-            .using(project(":"))
-    }
-}
 
-includeBuild("../node_modules/react-native-gradle-plugin")
+
+
 
