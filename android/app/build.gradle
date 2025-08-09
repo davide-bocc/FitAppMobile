@@ -109,39 +109,43 @@ android {
 }
 
 dependencies {
-    // React Native core — non usare com.facebook.react:react-native, usa react-android e hermes con versioni esplicite
-    implementation("com.facebook.react:react-android:${rootProject.ext.reactNativeVersion}") {
-        exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
-        exclude group: 'org.bouncycastle', module: 'bcprov-jdk18on'
-    }
+    // React Native Android come modulo locale (da node_modules)
+    implementation project(":packages:react-native:ReactAndroid")
+    implementation "com.facebook.react:react-native:0.75.1"
+
+    // Hermes (versione Maven, modifica se vuoi Hermes locale)
     implementation("com.facebook.react:hermes-android:${rootProject.ext.hermesEngineVersion}") {
         exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
         exclude group: 'org.bouncycastle', module: 'bcprov-jdk18on'
     }
 
-    // Firebase — usa BOM per gestire versioni
+    // Firebase BOM - opzionale, se usi moduli nativi per Crashlytics/Functions
     implementation platform("com.google.firebase:firebase-bom:${rootProject.ext.firebaseBomVersion}")
-    implementation "com.google.firebase:firebase-analytics"
-    implementation "com.google.firebase:firebase-auth"
-    implementation "com.google.firebase:firebase-firestore"
+
+    // Firebase moduli React Native come progetti locali
+    implementation project(":react-native-firebase_app")
+    implementation project(":react-native-firebase_auth")
+    implementation project(":react-native-firebase_firestore")
+
+    // Se Crashlytics NDK e Functions non li usi come moduli locali, lasciali come Maven:
     implementation "com.google.firebase:firebase-crashlytics-ndk"
     implementation "com.google.firebase:firebase-functions"
 
 
-    // Support libraries
+    // Librerie AndroidX e altre utilità
     implementation "androidx.core:core-ktx:1.12.0"
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
     implementation "androidx.multidex:multidex:2.0.1"
 
-    // React Native native modules
+    // Moduli React Native nativi locali
     implementation project(":react-native-vector-icons")
     implementation project(":react-native-sqlite-storage")
-
 }
+
 
 configurations.all {
     resolutionStrategy {
-        // Forza tutte le lib Kotlin a 1.9.22
+        // Forza versioni Kotlin coerenti (1.9.22)
         force(
             "org.jetbrains.kotlin:kotlin-stdlib:1.9.22",
             "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.22",

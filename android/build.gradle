@@ -32,6 +32,11 @@ allprojects {
         mavenCentral()
         maven { url("https://www.jitpack.io") }
         maven { url("$rootDir/../node_modules/react-native/android") }
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+
+        /*flatDir {
+            dirs("$rootDir/../node_modules/react-native/android")
+        }*/
     }
 
     tasks.withType(JavaCompile).configureEach {
@@ -81,6 +86,7 @@ subprojects { subproject ->
         }
 
         subproject.configurations.all {
+
             resolutionStrategy.eachDependency { details ->
                 if (details.requested.group == "com.facebook.react") {
                     if (details.requested.name in ["react-native", "react-android"]) {
