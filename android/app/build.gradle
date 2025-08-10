@@ -110,8 +110,9 @@ android {
 
 dependencies {
     // React Native Android come modulo locale (da node_modules)
-    implementation project(":packages:react-native:ReactAndroid")
-    implementation "com.facebook.react:react-native:0.75.1"
+    //implementation project(":packages:react-native:ReactAndroid")
+    //implementation "com.facebook.react:react-native:0.74.1"
+    implementation project(":ReactAndroid")
 
     // Hermes (versione Maven, modifica se vuoi Hermes locale)
     implementation("com.facebook.react:hermes-android:${rootProject.ext.hermesEngineVersion}") {
@@ -119,13 +120,24 @@ dependencies {
         exclude group: 'org.bouncycastle', module: 'bcprov-jdk18on'
     }
 
+    // fresco middleware
+    implementation(project(":ReactAndroid")) {
+        exclude group: "com.facebook.fresco.middleware", module: "fresco-middleware"
+    }
+
     // Firebase BOM - opzionale, se usi moduli nativi per Crashlytics/Functions
     implementation platform("com.google.firebase:firebase-bom:${rootProject.ext.firebaseBomVersion}")
 
-    // Firebase moduli React Native come progetti locali
-    implementation project(":react-native-firebase_app")
-    implementation project(":react-native-firebase_auth")
-    implementation project(":react-native-firebase_firestore")
+    // Firebase moduli React Native come progetti locali, escludendo React Native Maven
+    implementation(project(":react-native-firebase_app")) {
+        exclude group: "com.facebook.react", module: "react-native"
+    }
+    implementation(project(":react-native-firebase_auth")) {
+        exclude group: "com.facebook.react", module: "react-native"
+    }
+    implementation(project(":react-native-firebase_firestore")) {
+        exclude group: "com.facebook.react", module: "react-native"
+    }
 
     // Se Crashlytics NDK e Functions non li usi come moduli locali, lasciali come Maven:
     implementation "com.google.firebase:firebase-crashlytics-ndk"
@@ -141,7 +153,6 @@ dependencies {
     implementation project(":react-native-vector-icons")
     implementation project(":react-native-sqlite-storage")
 }
-
 
 configurations.all {
     resolutionStrategy {
