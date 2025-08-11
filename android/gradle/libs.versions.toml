@@ -7,6 +7,7 @@ targetSdk = "34"
 minSdk = "21"
 buildTools = "34.0.0"
 ndkVersion = "26.2.11394342"
+androidxAnnotation = "1.7.1"
 
 boost = "1.76.0"
 doubleconversion = "1.1.6"
@@ -48,13 +49,15 @@ androidx-appcompat-resources = { module = "androidx.appcompat:appcompat-resource
 androidx-autofill = { module = "androidx.autofill:autofill", version.ref = "androidxAutofill" }
 androidx-swiperefreshlayout = { module = "androidx.swiperefreshlayout:swiperefreshlayout", version.ref = "androidxSwipeRefreshLayout" }
 androidx-tracing = { module = "androidx.tracing:tracing", version.ref = "androidxTracing" }
+androidx-annotation = { module = "androidx.annotation:annotation", version = "1.7.1" }
+
 
 fbjni = { module = "com.facebook.fbjni:fbjni", version.ref = "fbjni" }
 
-fresco-core = { module = "com.facebook.fresco:fresco", version.ref = "fresco" }
-fresco-middleware = { module = "com.facebook.fresco.middleware:fresco-middleware", version.ref = "fresco" }
-fresco-imagepipeline-okhttp3 = { module = "com.facebook.fresco:imagepipeline-okhttp3", version.ref = "fresco" }
-fresco-ui-common = { module = "com.facebook.fresco:ui-common", version.ref = "fresco" }
+fresco = { module = "com.facebook.fresco:fresco", version.ref = "fresco" }
+fresco_middleware = { group = "com.facebook.fresco.middleware", name = "fresco-middleware", version.ref = "fresco" }
+fresco_imagepipeline_okhttp3 = { group = "com.facebook.fresco", name = "imagepipeline-okhttp3", version.ref = "fresco" }
+fresco_ui_common = { group = "com.facebook.fresco", name = "ui-common", version.ref = "fresco" }
 
 infer-annotation = { module = "com.facebook.infer.annotation:infer-annotation", version.ref = "inferAnnotation" }
 

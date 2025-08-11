@@ -121,9 +121,10 @@ dependencies {
     }
 
     // fresco middleware
+    /*
     implementation(project(":ReactAndroid")) {
         exclude group: "com.facebook.fresco.middleware", module: "fresco-middleware"
-    }
+    }*/
 
     // Firebase BOM - opzionale, se usi moduli nativi per Crashlytics/Functions
     implementation platform("com.google.firebase:firebase-bom:${rootProject.ext.firebaseBomVersion}")
@@ -142,7 +143,6 @@ dependencies {
     // Se Crashlytics NDK e Functions non li usi come moduli locali, lasciali come Maven:
     implementation "com.google.firebase:firebase-crashlytics-ndk"
     implementation "com.google.firebase:firebase-functions"
-
 
     // Librerie AndroidX e altre utilità
     implementation "androidx.core:core-ktx:1.12.0"

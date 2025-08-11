@@ -8,7 +8,7 @@ pluginManagement {
     }
 }
 
-includeBuild("$rootDir/../node_modules/@react-native/gradle-plugin")
+includeBuild("../node_modules/@react-native/gradle-plugin")
 
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
@@ -20,7 +20,7 @@ dependencyResolutionManagement {
         maven { url = uri("https://www.jitpack.io") }
         maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots/") }
         maven { url = uri("https://maven.google.com") }
-        maven { url 'https://maven.pkg.github.com/facebook/fresco' }
+        //maven { url 'https://maven.pkg.github.com/facebook/fresco' }
 
     }
     versionCatalogs {
@@ -41,6 +41,9 @@ project(":ReactAndroid").projectDir = file("../node_modules/react-native/ReactAn
 // Alias temporaneo per evitare errori con :packages:react-native:ReactAndroid
 include(":packages:react-native:ReactAndroid")
 project(":packages:react-native:ReactAndroid").projectDir = file("../node_modules/react-native/ReactAndroid")
+
+include(":packages:react-native:ReactAndroid:hermes-engine")
+project(":packages:react-native:ReactAndroid:hermes-engine").projectDir = file("../node_modules/react-native/ReactAndroid/hermes-engine")
 
 apply from: file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
 applyNativeModulesSettingsGradle(settings)
