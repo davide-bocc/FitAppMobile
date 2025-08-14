@@ -1,16 +1,18 @@
+import groovy.json.JsonOutput
+
 buildscript {
     ext {
         buildToolsVersion = "34.0.0"
-        minSdkVersion = 23
+        minSdkVersion = 24
         compileSdkVersion = 35
         targetSdkVersion = 35
         kotlinVersion = "1.9.24"
         gradleVersion = "8.8.0"
         firebaseBomVersion = "32.7.0"
         ndkVersion = "25.2.9519653"
-        reactNativeVersion = "0.75.5"
-        hermesEngineVersion = "0.75.5"
-        androidGradlePluginVersion = "8.6.0"
+        reactNativeVersion = "0.78.0"
+        hermesEngineVersion = "0.78.0"
+        androidGradlePluginVersion = "8.1.1"
         publishing_version = '0.13.4'
         cmake_version = "4.1.0"
     }
@@ -22,6 +24,7 @@ buildscript {
 
     dependencies {
         classpath("com.android.tools.build:gradle:$androidGradlePluginVersion")
+        classpath("com.facebook.react:react-native-gradle-plugin:0.78.0")
         classpath("com.google.gms:google-services:4.4.2")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
         classpath("com.google.firebase:firebase-crashlytics-gradle:2.9.9")
@@ -30,11 +33,11 @@ buildscript {
 
 project.ext.react = [
     enableHermes: true,
-    nodeExecutableAndArgs: ["C:/Program Files/nodejs/node.exe"]
+    nodeExecutableAndArgs: ["C:/Program Files/nodejs/node.exe"],
+    codegenDir: new File(rootProject.projectDir, "../node_modules/@react-native/codegen"),
+    windowsBashPath: "C:/Program Files/Git/bin/bash.exe",
 ]
 
-// *** Definizione immediata di libs dal version catalog ***
-// Spostato qui, fuori da qualsiasi blocco, per essere subito disponibile
 def libsCatalog = null
 def versionCatalogsExt = rootProject.extensions.findByName("versionCatalogs")
 if (versionCatalogsExt != null) {
@@ -46,10 +49,11 @@ if (libsCatalog != null) {
 
 allprojects {
     repositories {
-        // Lasciati commentati se non servono
+        google()
+        mavenCentral()
+        maven { url("https://www.jitpack.io") }
     }
 
-    // Forziamo PATH per trovare sdkmanager
     tasks.withType(JavaCompile).configureEach {
         sourceCompatibility = "17"
         targetCompatibility = "17"
@@ -72,55 +76,99 @@ allprojects {
     }
 }
 
-gradle.projectsEvaluated {
-    tasks.matching { true }.all { task ->
-        if (task.hasProperty("environment")) {
-            def newPath = System.getenv("PATH") + ";C:\\Users\\misti\\AppData\\Local\\Android\\Sdk\\cmdline-tools\\latest\\bin"
-            task.environment "PATH", newPath
-            task.environment "ANDROID_SDK_ROOT", "C:\\Users\\misti\\AppData\\Local\\Android\\Sdk"
-            task.environment "ANDROID_HOME", "C:\\Users\\misti\\AppData\\Local\\Android\\Sdk"
+// 🔧 TASK: genera autolinking.json in build/generated/autolinking/
+tasks.register("generateAutolinkingJson") {
+    def outputFile = file("$buildDir/generated/autolinking/autolinking.json")
+
+    outputs.file(outputFile)
+
+    doLast {
+        def nodePath = "C:/Program Files/nodejs/node.exe"
+        def npxPath = "C:/Program Files/nodejs/npx.cmd"
+
+        def command = [npxPath, "react-native", "config"]
+        def proc = command.execute(null, rootDir)
+        def output = new StringBuffer()
+        def error = new StringBuffer()
+        proc.consumeProcessOutput(output, error)
+        proc.waitFor()
+
+        if (proc.exitValue() != 0) {
+            throw new GradleException("Errore generando autolinking.json: ${error}")
         }
+
+        outputFile.parentFile.mkdirs()
+        outputFile.text = JsonOutput.prettyPrint(output.toString())
     }
 }
 
+// 🔁 Collegamento al preBuild del modulo app e gestione dipendenze task autolinking
+project(":app").afterEvaluate { appProject ->
+    def generateAutolinkingJsonTask = rootProject.tasks.findByName("generateAutolinkingJson")
+    def generateAutolinkingPackageListTask = appProject.tasks.findByName("generateAutolinkingPackageList")
 
-subprojects { subproject ->
-    afterEvaluate {
-        if (subproject.hasProperty("android")) {
-            subproject.android {
-                compileSdkVersion rootProject.ext.compileSdkVersion
-                buildToolsVersion rootProject.ext.buildToolsVersion
-                ndkVersion rootProject.ext.ndkVersion
+    if (generateAutolinkingJsonTask != null) {
+        appProject.tasks.named("preBuild").configure {
+            dependsOn(generateAutolinkingJsonTask)
+        }
+    }
 
-                defaultConfig {
-                    minSdkVersion rootProject.ext.minSdkVersion
-                    targetSdkVersion rootProject.ext.targetSdkVersion
-                }
+    if (generateAutolinkingPackageListTask != null && generateAutolinkingJsonTask != null) {
+        generateAutolinkingPackageListTask.dependsOn(generateAutolinkingJsonTask)
+        generateAutolinkingPackageListTask.inputs.file("$buildDir/generated/autolinking/autolinking.json")
+    }
+}
 
-                compileOptions {
-                    sourceCompatibility = JavaVersion.VERSION_17
-                    targetCompatibility = JavaVersion.VERSION_17
-                }
+gradle.projectsEvaluated {
+    def hermesCleanTask = tasks.findByPath(":packages:react-native:ReactAndroid:hermes-engine:clean")
+    if (hermesCleanTask != null) {
+        println(">>> Disabilito la task hermes-engine:clean per evitare il blocco")
+        hermesCleanTask.enabled = false
+    }
+}
 
-                packagingOptions {
-                    excludes += ["**/bcprov-jdk*.jar"]
-                }
+subprojects {
+    if (it.hasProperty("android")) {
+        it.android {
+            compileSdkVersion rootProject.ext.compileSdkVersion
+            buildToolsVersion rootProject.ext.buildToolsVersion
+            ndkVersion rootProject.ext.ndkVersion
+
+            defaultConfig {
+                minSdkVersion rootProject.ext.minSdkVersion
+                targetSdkVersion rootProject.ext.targetSdkVersion
             }
 
-            subproject.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-                kotlinOptions {
-                    jvmTarget = "17"
-                    freeCompilerArgs += ["-Xjvm-default=all"]
+            compileOptions {
+                sourceCompatibility = JavaVersion.VERSION_17
+                targetCompatibility = JavaVersion.VERSION_17
+            }
+
+            packagingOptions {
+                excludes += ["**/bcprov-jdk*.jar"]
+            }
+
+            if (it.name == "react-native-reanimated" || it.name == "react-native-vector-icons") {
+                buildFeatures {
+                    buildConfig = true
                 }
             }
         }
 
-        // ESCLUSIONE fresco-middleware a livello di configurazioni:
-        subproject.configurations.all {
+        it.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+            kotlinOptions {
+                jvmTarget = "17"
+                freeCompilerArgs += ["-Xjvm-default=all"]
+            }
+        }
+    }
+
+    it.afterEvaluate {
+        it.configurations.all {
             exclude group: 'com.facebook.fresco.middleware', module: 'fresco-middleware'
         }
 
-        subproject.configurations.all {
+        it.configurations.all {
             resolutionStrategy {
                 eachDependency { details ->
                     if (details.requested.group == "com.facebook.react") {
@@ -139,31 +187,24 @@ subprojects { subproject ->
             }
         }
 
-        if (subproject.name == "react-native-firebase_app") {
-            subproject.tasks.matching { it.name == "copyDebugJniLibsProjectAndLocalJars" }.configureEach {
+        if (it.name == "react-native-firebase_app") {
+            it.tasks.matching { task -> task.name == "copyDebugJniLibsProjectAndLocalJars" }.configureEach {
                 dependsOn(":react-native-firebase_app:stripDebugDebugSymbols")
             }
         }
 
-        // Inject `libs.androidx.annotation` se manca (es. in hermes-engine)
         if (rootProject.ext.has("libs")) {
             def annotationLib = rootProject.ext.libs.findLibrary("androidx-annotation")
             if (annotationLib.isPresent()) {
-                if (subproject.configurations.findByName("implementation") != null) {
-                    subproject.dependencies.add("implementation", annotationLib.get())
+                if (it.configurations.findByName("implementation") != null) {
+                    it.dependencies.add("implementation", annotationLib.get())
+                } else if (it.configurations.findByName("api") != null) {
+                    it.dependencies.add("api", annotationLib.get())
                 } else {
-                    // fallback, se serve, ad esempio "api" o "compileOnly"
-                    if (subproject.configurations.findByName("api") != null) {
-                        subproject.dependencies.add("api", annotationLib.get())
-                    } else {
-                        println "Nessuna configurazione implementation o api trovata in ${subproject.name}"
-                    }
+                    println "Nessuna configurazione implementation o api trovata in ${it.name}"
                 }
             }
         }
     }
 }
-
-
-
 

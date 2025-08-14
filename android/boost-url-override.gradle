@@ -1,0 +1,17 @@
+// android/boost-url-override.gradle
+gradle.projectsEvaluated {
+    def boostOverride = project.hasProperty("BOOST_URL") ? project.property("BOOST_URL") : null
+
+    if (boostOverride) {
+        rootProject.allprojects {
+            afterEvaluate {
+                def reactAndroidProject = it.findProject(":ReactAndroid")
+                if (reactAndroidProject != null) {
+                    reactAndroidProject.buildscript {
+                        ext.BOOST_URL = boostOverride
+                    }
+                }
+            }
+        }
+    }
+}

@@ -2,6 +2,7 @@ package fit.app.mobile
 
 import android.os.Build
 import android.os.Bundle
+import fit.app.mobile.R
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

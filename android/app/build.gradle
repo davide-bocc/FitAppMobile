@@ -2,14 +2,18 @@ apply plugin: "com.android.application"
 apply plugin: "com.google.gms.google-services"
 apply plugin: "com.google.firebase.crashlytics"
 apply plugin: "org.jetbrains.kotlin.android"
+apply plugin: "com.facebook.react"
 
 project.ext.react = [
     enableHermes: true,
+    enableJsc: false,
     bundleInDebug: false,
+    enableAutolinking: false,
     devDisabledInRelease: true,
-    hermesCommand: "../../node_modules/hermes-engine/%OS-BIN%/hermesc",
+    hermesCommand: "C:\\Users\\misti\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\cmake.exe", // Verifica se serve, altrimenti rimuovi
     bundleCommand: "ram-bundle",
-    extraPackagerArgs: ["--indexed-ram-bundle"]
+    extraPackagerArgs: ["--indexed-ram-bundle"],
+    packageName: "fit.app.mobile"
 ]
 
 android {
@@ -27,6 +31,8 @@ android {
         multiDexEnabled true
         vectorDrawables.useSupportLibrary = true
         ndkVersion rootProject.ext.ndkVersion
+
+        buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", "false"
     }
 
     signingConfigs {
@@ -92,8 +98,8 @@ android {
             "-Xsuppress-version-warnings",
             "-Xallow-result-return-type"
         ]
-        apiVersion = "1.8"
-        languageVersion = "1.8"
+        apiVersion = "1.9"
+        languageVersion = "1.9"
     }
 
     buildFeatures {
@@ -101,35 +107,18 @@ android {
     }
 
     sourceSets {
-        getByName("main").java.srcDirs(
-            "src/main/java",
-            "src/main/kotlin"
-        )
+        getByName("main").java.srcDirs("src/main/kotlin")
     }
 }
 
 dependencies {
-    // React Native Android come modulo locale (da node_modules)
-    //implementation project(":packages:react-native:ReactAndroid")
-    //implementation "com.facebook.react:react-native:0.74.1"
-    implementation project(":ReactAndroid")
-
-    // Hermes (versione Maven, modifica se vuoi Hermes locale)
     implementation("com.facebook.react:hermes-android:${rootProject.ext.hermesEngineVersion}") {
         exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
         exclude group: 'org.bouncycastle', module: 'bcprov-jdk18on'
     }
 
-    // fresco middleware
-    /*
-    implementation(project(":ReactAndroid")) {
-        exclude group: "com.facebook.fresco.middleware", module: "fresco-middleware"
-    }*/
-
-    // Firebase BOM - opzionale, se usi moduli nativi per Crashlytics/Functions
     implementation platform("com.google.firebase:firebase-bom:${rootProject.ext.firebaseBomVersion}")
 
-    // Firebase moduli React Native come progetti locali, escludendo React Native Maven
     implementation(project(":react-native-firebase_app")) {
         exclude group: "com.facebook.react", module: "react-native"
     }
@@ -140,36 +129,38 @@ dependencies {
         exclude group: "com.facebook.react", module: "react-native"
     }
 
-    // Se Crashlytics NDK e Functions non li usi come moduli locali, lasciali come Maven:
     implementation "com.google.firebase:firebase-crashlytics-ndk"
     implementation "com.google.firebase:firebase-functions"
 
-    // Librerie AndroidX e altre utilità
     implementation "androidx.core:core-ktx:1.12.0"
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
     implementation "androidx.multidex:multidex:2.0.1"
 
-    // Moduli React Native nativi locali
     implementation project(":react-native-vector-icons")
     implementation project(":react-native-sqlite-storage")
+
+    implementation("com.facebook.react:react-native:${rootProject.ext.reactNativeVersion}")
 }
 
+
 configurations.all {
+    exclude group: 'org.webkit', module: 'android-jsc'
+
     resolutionStrategy {
-        // Forza versioni Kotlin coerenti (1.9.22)
         force(
-            "org.jetbrains.kotlin:kotlin-stdlib:1.9.22",
-            "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.22",
-            "org.jetbrains.kotlin:kotlin-reflect:1.9.22",
-            "org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.9.22"
+            "org.jetbrains.kotlin:kotlin-stdlib:1.9.24",
+            "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.24",
+            "org.jetbrains.kotlin:kotlin-reflect:1.9.24",
+            "org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.9.24"
         )
     }
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
     kotlinOptions {
-        apiVersion = "1.8"
-        languageVersion = "1.8"
+        apiVersion = "1.9"
+        languageVersion = "1.9"
+        jvmTarget = "17"
     }
 }
 

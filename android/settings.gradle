@@ -34,17 +34,6 @@ rootProject.name = "FitApp"
 
 include(":app")
 
-// React Native come modulo locale
-include(":ReactAndroid")
-project(":ReactAndroid").projectDir = file("../node_modules/react-native/ReactAndroid")
-
-// Alias temporaneo per evitare errori con :packages:react-native:ReactAndroid
-include(":packages:react-native:ReactAndroid")
-project(":packages:react-native:ReactAndroid").projectDir = file("../node_modules/react-native/ReactAndroid")
-
-include(":packages:react-native:ReactAndroid:hermes-engine")
-project(":packages:react-native:ReactAndroid:hermes-engine").projectDir = file("../node_modules/react-native/ReactAndroid/hermes-engine")
-
 apply from: file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
 applyNativeModulesSettingsGradle(settings)
 
@@ -67,4 +56,7 @@ includeIfExists("react-native-firebase_firestore", "@react-native-firebase/fires
 
 include(":react-native-sqlite-storage")
 project(":react-native-sqlite-storage").projectDir = new File(rootProject.projectDir, "../node_modules/react-native-sqlite-storage/platforms/android")
+
+include ':react-native'
+project(':react-native').projectDir = new File(rootProject.projectDir, '../node_modules/react-native/android')
 
