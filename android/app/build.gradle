@@ -40,10 +40,10 @@ android {
             storeFile file("my-release-key.keystore")
             storePassword "Cl1mb!ng.Ks"
             keyAlias "my-key-alias"
-            keyPassword "Cl1mb!ng.KS"
+            keyPassword "Cl1mb!ng.Ks"
         }
         release {
-            storeFile file('fitapp-release-key.keystore')
+            storeFile file("my-release-key.keystore")
             storePassword System.getenv("FITAPP_STORE_PASSWORD") ?: ""
             keyAlias System.getenv("FITAPP_KEY_ALIAS") ?: ""
             keyPassword System.getenv("FITAPP_KEY_PASSWORD") ?: ""
@@ -80,6 +80,9 @@ android {
         pickFirst "**/libc++_shared.so"
         exclude "META-INF/**"
         exclude "**/org/bouncycastle/**"
+
+        pickFirst("**/PackageList.class")
+        pickFirst("**/com/facebook/react/PackageList.class")
     }
 
     aaptOptions {
@@ -107,7 +110,28 @@ android {
     }
 
     sourceSets {
-        getByName("main").java.srcDirs("src/main/kotlin")
+        main {
+            java {
+                setSrcDirs([
+                    "src/main/kotlin",
+                    "build/generated/autolinking/src/main/java"
+                ])
+                // Escludi il file specifico (se serve)
+                exclude("**/org/pgsqlite/SQLitePluginPackage.java")
+                // NON mettere exclude per rncli qui, la eliminiamo nel task sotto
+            }
+        }
+    }
+}
+
+// --- BLOCCO PER ELIMINARE RNCLI PRIMA DELLA COMPILAZIONE ---
+tasks.withType(JavaCompile).configureEach {
+    doFirst {
+        def rncliDir = file("$buildDir/generated/rncli")
+        if (rncliDir.exists()) {
+            println("Eliminazione cartella build/generated/rncli per evitare duplicati di PackageList.java")
+            rncliDir.deleteDir()
+        }
     }
 }
 
@@ -141,7 +165,6 @@ dependencies {
 
     implementation("com.facebook.react:react-native:${rootProject.ext.reactNativeVersion}")
 }
-
 
 configurations.all {
     exclude group: 'org.webkit', module: 'android-jsc'

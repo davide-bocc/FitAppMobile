@@ -36,6 +36,7 @@ project.ext.react = [
     nodeExecutableAndArgs: ["C:/Program Files/nodejs/node.exe"],
     codegenDir: new File(rootProject.projectDir, "../node_modules/@react-native/codegen"),
     windowsBashPath: "C:/Program Files/Git/bin/bash.exe",
+    packageListPath: "$buildDir/generated/autolinking/src/main/java/com/facebook/react/PackageList.java"
 ]
 
 def libsCatalog = null
@@ -127,6 +128,18 @@ gradle.projectsEvaluated {
     }
 }
 
+// --- TASK che pulisce la cartella rncli per evitare duplicati ---
+tasks.register("cleanRncli", Delete) {
+    delete fileTree(dir: "$buildDir/generated/rncli")
+}
+
+// Imposta dipendenza: prima di compilare Java, pulisci rncli
+tasks.whenTaskAdded { task ->
+    if (task.name == "compileDebugJavaWithJavac" || task.name == "compileReleaseJavaWithJavac") {
+        task.dependsOn("cleanRncli")
+    }
+}
+
 subprojects {
     if (it.hasProperty("android")) {
         it.android {
@@ -184,6 +197,7 @@ subprojects {
                 force("org.jetbrains.kotlin:kotlin-stdlib:${rootProject.ext.kotlinVersion}")
                 force("org.jetbrains.kotlin:kotlin-reflect:${rootProject.ext.kotlinVersion}")
                 force("org.jetbrains.kotlin:kotlin-compiler-embeddable:${rootProject.ext.kotlinVersion}")
+                force("org.jetbrains.kotlin:kotlin-gradle-plugin:${rootProject.ext.kotlinVersion}") // ✅ aggiunto
             }
         }
 
@@ -207,4 +221,5 @@ subprojects {
         }
     }
 }
+
 
