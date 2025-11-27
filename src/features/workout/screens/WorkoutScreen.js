@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Alert, FlatList, TouchableOpacity, Modal } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
+import Icon from 'react-native-vector-icons/Ionicons';
 import LocalDB from '../../../database/local/LocalDB';
-import { collection, addDoc, writeBatch } from 'firebase/firestore';
+import { collection, addDoc } from 'firebase/firestore';
 import { db, fetchWithCache } from '../../../database/firebase/firebaseConfig';
 
 const WorkoutScreen = ({ navigation }) => {
-  const [workout, setWorkout] = useState({
-    name: '',
-    exercises: []
-  });
+  const [workout, setWorkout] = useState({ name: '', exercises: [] });
   const [availableExercises, setAvailableExercises] = useState([]);
+  const [newExercise, setNewExercise] = useState({ id: '', sets: 3, reps: 10, restTime: 60 });
+  const [isExerciseModalVisible, setIsExerciseModalVisible] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Carica esercizi con cache
   useEffect(() => {
@@ -23,41 +25,6 @@ const WorkoutScreen = ({ navigation }) => {
         setAvailableExercises(localExercises);
       }
     };
-    loadExercises();
-  }, []);
-
-  // Salvataggio ottimizzato
-  const handleSaveWorkout = async () => {
-    const workoutData = {
-      name: workout.name,
-      exercises: workout.exercises,
-      createdAt: new Date().toISOString()
-    };
-
-    try {
-      // 1. Salva in locale
-      await LocalDB.create('workouts', workoutData);
-
-      // 2. Sincronizza con Firebase solo se connessione disponibile
-      if (navigator.onLine) {
-        const docRef = await addDoc(collection(db, 'workouts'), workoutData);
-        await LocalDB.update('workouts', workoutData.id, {
-          firebase_id: docRef.id,
-          synced: true
-        });
-      } else {
-        await LocalDB.update('workouts', workoutData.id, { synced: false });
-      }
-
-      Alert.alert('Successo', 'Workout salvato!');
-      navigation.goBack();
-    } catch (error) {
-      console.error('Save error:', error);
-      Alert.alert('Errore', 'Salvataggio fallito');
-    }
-  };
-
-
     loadExercises();
   }, []);
 
@@ -78,12 +45,7 @@ const WorkoutScreen = ({ navigation }) => {
     }));
 
     setIsExerciseModalVisible(false);
-    setNewExercise({
-      id: availableExercises[0]?.id || '',
-      sets: 3,
-      reps: 10,
-      restTime: 60
-    });
+    setNewExercise({ id: availableExercises[0]?.id || '', sets: 3, reps: 10, restTime: 60 });
   };
 
   const handleRemoveExercise = (index) => {
@@ -160,20 +122,14 @@ const WorkoutScreen = ({ navigation }) => {
               </Text>
             </View>
             <TouchableOpacity onPress={() => handleRemoveExercise(index)}>
-              <Icon name="delete" size={24} color="#e74c3c" />
+              <Icon name="trash" size={24} color="#e74c3c" />
             </TouchableOpacity>
           </View>
         )}
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>Nessun esercizio aggiunto</Text>
-        }
+        ListEmptyComponent={<Text style={styles.emptyText}>Nessun esercizio aggiunto</Text>}
       />
 
-      <Button
-        title="Aggiungi Esercizio"
-        onPress={() => setIsExerciseModalVisible(true)}
-      />
-
+      <Button title="Aggiungi Esercizio" onPress={() => setIsExerciseModalVisible(true)} />
       <Button
         title="Salva Workout"
         onPress={handleSaveWorkout}
@@ -181,12 +137,7 @@ const WorkoutScreen = ({ navigation }) => {
         color="#2ecc71"
       />
 
-      {/* Modal Aggiungi Esercizio */}
-      <Modal
-        visible={isExerciseModalVisible}
-        animationType="slide"
-        transparent={true}
-      >
+      <Modal visible={isExerciseModalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Aggiungi Esercizio</Text>
@@ -206,10 +157,7 @@ const WorkoutScreen = ({ navigation }) => {
                 style={styles.numberInput}
                 keyboardType="numeric"
                 value={newExercise.sets.toString()}
-                onChangeText={text => setNewExercise(prev => ({
-                  ...prev,
-                  sets: parseInt(text) || 0
-                }))}
+                onChangeText={text => setNewExercise(prev => ({ ...prev, sets: parseInt(text) || 0 }))}
               />
             </View>
 
@@ -219,10 +167,7 @@ const WorkoutScreen = ({ navigation }) => {
                 style={styles.numberInput}
                 keyboardType="numeric"
                 value={newExercise.reps.toString()}
-                onChangeText={text => setNewExercise(prev => ({
-                  ...prev,
-                  reps: parseInt(text) || 0
-                }))}
+                onChangeText={text => setNewExercise(prev => ({ ...prev, reps: parseInt(text) || 0 }))}
               />
             </View>
 
@@ -232,23 +177,13 @@ const WorkoutScreen = ({ navigation }) => {
                 style={styles.numberInput}
                 keyboardType="numeric"
                 value={newExercise.restTime.toString()}
-                onChangeText={text => setNewExercise(prev => ({
-                  ...prev,
-                  restTime: parseInt(text) || 0
-                }))}
+                onChangeText={text => setNewExercise(prev => ({ ...prev, restTime: parseInt(text) || 0 }))}
               />
             </View>
 
             <View style={styles.modalButtons}>
-              <Button
-                title="Annulla"
-                onPress={() => setIsExerciseModalVisible(false)}
-                color="#e74c3c"
-              />
-              <Button
-                title="Aggiungi"
-                onPress={handleAddExercise}
-              />
+              <Button title="Annulla" onPress={() => setIsExerciseModalVisible(false)} color="#e74c3c" />
+              <Button title="Aggiungi" onPress={handleAddExercise} />
             </View>
           </View>
         </View>
@@ -258,93 +193,20 @@ const WorkoutScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#f8f9fa'
-  },
-  input: {
-    height: 50,
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    marginBottom: 20,
-    backgroundColor: 'white'
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    color: '#2c3e50'
-  },
-  exerciseItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 15,
-    marginBottom: 10,
-    backgroundColor: 'white',
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2
-  },
-  exerciseInfo: {
-    flex: 1
-  },
-  exerciseName: {
-    fontWeight: 'bold',
-    marginBottom: 5
-  },
-  exerciseDetails: {
-    color: '#7f8c8d',
-    fontSize: 14
-  },
-  emptyText: {
-    textAlign: 'center',
-    color: '#95a5a6',
-    marginVertical: 20
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)'
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    margin: 20,
-    padding: 20,
-    borderRadius: 10
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center'
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginVertical: 10
-  },
-  numberInput: {
-    width: 80,
-    height: 40,
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    textAlign: 'center'
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 20
-  }
+  container: { flex: 1, padding: 20, backgroundColor: '#f8f9fa' },
+  input: { height: 50, borderColor: '#ddd', borderWidth: 1, borderRadius: 8, paddingHorizontal: 15, marginBottom: 20, backgroundColor: 'white' },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 15, color: '#2c3e50' },
+  exerciseItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 15, marginBottom: 10, backgroundColor: 'white', borderRadius: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 },
+  exerciseInfo: { flex: 1 },
+  exerciseName: { fontWeight: 'bold', marginBottom: 5 },
+  exerciseDetails: { color: '#7f8c8d', fontSize: 14 },
+  emptyText: { textAlign: 'center', color: '#95a5a6', marginVertical: 20 },
+  modalContainer: { flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
+  modalContent: { backgroundColor: 'white', margin: 20, padding: 20, borderRadius: 10 },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+  inputRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 10 },
+  numberInput: { width: 80, height: 40, borderColor: '#ddd', borderWidth: 1, borderRadius: 5, paddingHorizontal: 10, textAlign: 'center' },
+  modalButtons: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 20 }
 });
 
 export default WorkoutScreen;

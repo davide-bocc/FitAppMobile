@@ -3,7 +3,7 @@ import { View, Alert, StyleSheet } from 'react-native';
 import { AuthService } from '../services/AuthService';
 import AuthForm from '../components/AuthForm';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import OfflineQueue from '../../utils/OfflineQueue';
+import OfflineQueue from '../utils/OfflineQueue';
 
 const RegisterScreen = ({ navigation }) => {
   const [userType, setUserType] = useState('student');

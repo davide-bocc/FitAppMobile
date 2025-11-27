@@ -1,38 +1,24 @@
-apply plugin: "com.android.application"
-apply plugin: "com.google.gms.google-services"
-apply plugin: "com.google.firebase.crashlytics"
-apply plugin: "org.jetbrains.kotlin.android"
-apply plugin: "com.facebook.react"
-
-project.ext.react = [
-    enableHermes: true,
-    enableJsc: false,
-    bundleInDebug: false,
-    enableAutolinking: false,
-    devDisabledInRelease: true,
-    hermesCommand: "C:\\Users\\misti\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\cmake.exe", // Verifica se serve, altrimenti rimuovi
-    bundleCommand: "ram-bundle",
-    extraPackagerArgs: ["--indexed-ram-bundle"],
-    packageName: "fit.app.mobile"
-]
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("com.facebook.react")
+    id("com.google.gms.google-services")
+}
 
 android {
+    namespace "fit.app.mobile"
     compileSdkVersion rootProject.ext.compileSdkVersion
     ndkVersion rootProject.ext.ndkVersion
-    namespace "fit.app.mobile"
 
     defaultConfig {
         applicationId "fit.app.mobile"
+
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
+
         versionCode 1
         versionName "1.0.0"
-        resValue "string", "build_config_package", "fit.app.mobile"
         multiDexEnabled true
-        vectorDrawables.useSupportLibrary = true
-        ndkVersion rootProject.ext.ndkVersion
-
-        buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", "false"
     }
 
     signingConfigs {
@@ -43,50 +29,35 @@ android {
             keyPassword "Cl1mb!ng.Ks"
         }
         release {
-            storeFile file("my-release-key.keystore")
-            storePassword System.getenv("FITAPP_STORE_PASSWORD") ?: ""
-            keyAlias System.getenv("FITAPP_KEY_ALIAS") ?: ""
-            keyPassword System.getenv("FITAPP_KEY_PASSWORD") ?: ""
+            if (System.getenv("FITAPP_STORE_PASSWORD") != null) {
+                storeFile file("my-release-key.keystore")
+                storePassword System.getenv("FITAPP_STORE_PASSWORD")
+                keyAlias System.getenv("FITAPP_KEY_ALIAS")
+                keyPassword System.getenv("FITAPP_KEY_PASSWORD")
+            }
         }
     }
 
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
-            debuggable true
-            ext.enableCrashlytics = false
-            resValue "string", "CodePushDeploymentKey", '""'
         }
         release {
             signingConfig signingConfigs.release
-            minifyEnabled true
-            shrinkResources true
-            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
-            zipAlignEnabled true
-            debuggable false
-            resValue "string", "CodePushDeploymentKey", '""'
-
-            firebaseCrashlytics {
-                strippedNativeLibsDir "build/intermediates/stripped_native_libs/release/out/lib"
-                unstrippedNativeLibsDir "build/intermediates/merged_native_libs/release/out/lib"
-            }
+            minifyEnabled false
+            shrinkResources false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 
     packagingOptions {
-        exclude "**/bcprov-jdk*.jar"
-        exclude "**/libjsc.so"
-        exclude "**/libfbjni.so"
+        jniLibs {
+            useLegacyPackaging = false
+        }
         pickFirst "**/libc++_shared.so"
-        exclude "META-INF/**"
-        exclude "**/org/bouncycastle/**"
-
-        pickFirst("**/PackageList.class")
-        pickFirst("**/com/facebook/react/PackageList.class")
-    }
-
-    aaptOptions {
-        ignoreAssetsPattern "!*.zip:!*.so:!*/armeabi-v7a/*:!*/arm64-v8a/*"
     }
 
     compileOptions {
@@ -96,97 +67,21 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
-        freeCompilerArgs += [
-            "-Xskip-metadata-version-check",
-            "-Xsuppress-version-warnings",
-            "-Xallow-result-return-type"
-        ]
-        apiVersion = "1.9"
-        languageVersion = "1.9"
     }
 
     buildFeatures {
         buildConfig true
     }
-
-    sourceSets {
-        main {
-            java {
-                setSrcDirs([
-                    "src/main/kotlin",
-                    "build/generated/autolinking/src/main/java"
-                ])
-                // Escludi il file specifico (se serve)
-                exclude("**/org/pgsqlite/SQLitePluginPackage.java")
-                // NON mettere exclude per rncli qui, la eliminiamo nel task sotto
-            }
-        }
-    }
-}
-
-// --- BLOCCO PER ELIMINARE RNCLI PRIMA DELLA COMPILAZIONE ---
-tasks.withType(JavaCompile).configureEach {
-    doFirst {
-        def rncliDir = file("$buildDir/generated/rncli")
-        if (rncliDir.exists()) {
-            println("Eliminazione cartella build/generated/rncli per evitare duplicati di PackageList.java")
-            rncliDir.deleteDir()
-        }
-    }
 }
 
 dependencies {
-    implementation("com.facebook.react:hermes-android:${rootProject.ext.hermesEngineVersion}") {
-        exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
-        exclude group: 'org.bouncycastle', module: 'bcprov-jdk18on'
-    }
-
-    implementation platform("com.google.firebase:firebase-bom:${rootProject.ext.firebaseBomVersion}")
-
-    implementation(project(":react-native-firebase_app")) {
-        exclude group: "com.facebook.react", module: "react-native"
-    }
-    implementation(project(":react-native-firebase_auth")) {
-        exclude group: "com.facebook.react", module: "react-native"
-    }
-    implementation(project(":react-native-firebase_firestore")) {
-        exclude group: "com.facebook.react", module: "react-native"
-    }
-
-    implementation "com.google.firebase:firebase-crashlytics-ndk"
-    implementation "com.google.firebase:firebase-functions"
-
-    implementation "androidx.core:core-ktx:1.12.0"
-    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
+    implementation platform("com.google.firebase:firebase-bom:33.3.0")
     implementation "androidx.multidex:multidex:2.0.1"
+    implementation "com.google.firebase:firebase-auth"
+    implementation "com.google.firebase:firebase-firestore"
 
-    implementation project(":react-native-vector-icons")
-    implementation project(":react-native-sqlite-storage")
-
-    implementation("com.facebook.react:react-native:${rootProject.ext.reactNativeVersion}")
+    implementation("com.facebook.react:react-android")
+    implementation("com.facebook.react:hermes-android")
 }
 
-configurations.all {
-    exclude group: 'org.webkit', module: 'android-jsc'
 
-    resolutionStrategy {
-        force(
-            "org.jetbrains.kotlin:kotlin-stdlib:1.9.24",
-            "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.24",
-            "org.jetbrains.kotlin:kotlin-reflect:1.9.24",
-            "org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.9.24"
-        )
-    }
-}
-
-tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-    kotlinOptions {
-        apiVersion = "1.9"
-        languageVersion = "1.9"
-        jvmTarget = "17"
-    }
-}
-
-apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")
-apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
-applyNativeModulesAppBuildGradle(project)

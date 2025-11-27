@@ -3,6 +3,11 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
 import { getStorage } from 'firebase/storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { query, collection, getDocs } from 'firebase/firestore';
+
+// Cambia a false per usare Firebase cloud reale
+const USE_EMULATORS = false;
 
 // Configurazione automatica da google-services.json
 const firebaseApp = initializeApp({
@@ -15,8 +20,8 @@ export const db = getFirestore(firebaseApp);
 export const functions = getFunctions(firebaseApp);
 export const storage = getStorage(firebaseApp);
 
-// Configurazione emulatori in sviluppo
-if (__DEV__) {
+// Configurazione emulatori in sviluppo, solo se abilitati
+if (__DEV__ && USE_EMULATORS) {
   connectFirestoreEmulator(db, 'localhost', 8080);
   connectFunctionsEmulator(functions, 'localhost', 5001);
 }

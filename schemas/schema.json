@@ -1,0 +1,12 @@
+{
+  "modules": {
+    "react-native": {
+      "name": "ReactNative",
+      "type": "module",
+      "spec": {
+        "version": "0.78.0"
+      }
+    }
+  },
+  "version": 1
+}

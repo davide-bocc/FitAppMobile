@@ -1,59 +1,23 @@
 pluginManagement {
     repositories {
+        gradlePluginPortal()
         google()
         mavenCentral()
-        gradlePluginPortal()
-        maven { url = uri("https://www.jitpack.io") }
-        maven { url = uri("https://maven.google.com") } // Google Maven repo per Fresco e Google libs
     }
 }
 
-includeBuild("../node_modules/@react-native/gradle-plugin")
-
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
     repositories {
         google()
         mavenCentral()
-        // React Native local Maven repo per dipendenze AAR
         maven { url = uri("$rootDir/../node_modules/react-native/android") }
+        maven { url = uri("$rootDir/../node_modules/hermes-engine/maven") }
         maven { url = uri("https://www.jitpack.io") }
-        maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots/") }
-        maven { url = uri("https://maven.google.com") }
-        //maven { url 'https://maven.pkg.github.com/facebook/fresco' }
-
-    }
-    versionCatalogs {
-        customLibs {
-            from(files("gradle/libs.versions.toml"))
-        }
     }
 }
 
-rootProject.name = "FitApp"
-
+rootProject.name = "FitAppMobile"
 include(":app")
 
-apply from: file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
-applyNativeModulesSettingsGradle(settings)
-
-def includeIfExists(String moduleName, String relativePath) {
-    def moduleDir = new File("${rootDir}/../node_modules/${relativePath}")
-    if (moduleDir.exists()) {
-        include(":${moduleName}")
-        project(":${moduleName}").projectDir = moduleDir
-    }
-}
-
-includeIfExists("react-native-vector-icons", "react-native-vector-icons/android")
-includeIfExists("react-native-gesture-handler", "react-native-gesture-handler/android")
-includeIfExists("react-native-reanimated", "react-native-reanimated/android")
-
-// Firebase come moduli locali, se installati
-includeIfExists("react-native-firebase_app", "@react-native-firebase/app/android")
-includeIfExists("react-native-firebase_auth", "@react-native-firebase/auth/android")
-includeIfExists("react-native-firebase_firestore", "@react-native-firebase/firestore/android")
-
-include(":react-native-sqlite-storage")
-project(":react-native-sqlite-storage").projectDir = new File(rootProject.projectDir, "../node_modules/react-native-sqlite-storage/platforms/android")
-
+includeBuild('../node_modules/@react-native/gradle-plugin')

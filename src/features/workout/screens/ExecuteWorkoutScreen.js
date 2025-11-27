@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, Button, StyleSheet, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import LocalDB from '../../../database/local/LocalDB';
-import TimerService from '../services/TimerService';
+import TimerService from '../../../services/TimerService';
 import { doc, getDoc } from 'firebase/firestore';
 import { db, fetchWithCache } from '../../../database/firebase/firebaseConfig';
 

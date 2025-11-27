@@ -19,14 +19,14 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "Fit.App.Mobile"
+      "bundleIdentifier": "fit.app.mobile"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
       },
-      "package": "Fit.App.Mobile",
+      "package": "fit.app.mobile",
       "enableShrinkResourcesInReleaseBuilds": true
     },
     "web": {

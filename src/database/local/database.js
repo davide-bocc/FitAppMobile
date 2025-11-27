@@ -1,4 +1,4 @@
-import SQLite from 'react-native-sqlite-2';
+import SQLite from 'react-native-sqlite-storage';
 
 const db = SQLite.openDatabase({
   name: 'fitapp_v2.db',

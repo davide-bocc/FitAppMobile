@@ -2,14 +2,14 @@
 androidGradlePlugin = "8.1.1"
 kotlin = "1.9.24"
 reactNative = "0.78.0"
-compileSdk = "34"
-targetSdk = "34"
+compileSdk = "35"
+targetSdk = "35"
 minSdk = "24"
 buildTools = "34.0.0"
 ndkVersion = "26.2.11394342"
 androidxAnnotation = "1.7.1"
 
-boost = "1.76.0"
+boost = "1.83.0"
 doubleconversion = "1.1.6"
 fmt = "8.1.1"
 folly = "2023.07.10.00"
@@ -39,7 +39,7 @@ mockitoKotlin = "4.0.0"          # Aggiunto mockitoKotlin per fix unresolved ref
 robolectric = "4.10.3"
 thoughtworks = "1.0.2"
 
-fastFloat = "0.2.5"              # Aggiunto fastFloat (versione stabile)
+fastFloat = "8.0.2"              # Aggiunto fastFloat (versione stabile)
 
 [plugins]
 android-library = { id = "com.android.library" }

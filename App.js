@@ -1,17 +1,17 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { executeQuery } from './services/database';
+import { executeQuery } from './src/database/local/database';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 
 // Lazy loading delle schermate
-const LoginScreen = React.lazy(() => import('./src/auth/LoginScreen'));
-const RegisterScreen = React.lazy(() => import('./src/auth/RegisterScreen'));
-const CoachHomeScreen = React.lazy(() => import('./src/features/user/screens/CoachHomeScreen'));
-const UserHomeScreen = React.lazy(() => import('./src/features/user/screens/UserHomeScreen'));
-const WorkoutScreen = React.lazy(() => import('./src/features/workout/screens/WorkoutScreen'));
-const ExecuteWorkoutScreen = React.lazy(() => import('./src/features/workout//screens/ExecuteWorkoutScreen'));
+import LoginScreen from './src/auth/LoginScreen';
+import RegisterScreen from './src/auth/RegisterScreen';
+import CoachHomeScreen from './src/features/user/screens/CoachHomeScreen';
+import UserHomeScreen from './src/features/user/screens/UserHomeScreen';
+import WorkoutScreen from './src/features/workout/screens/WorkoutScreen';
+import ExecuteWorkoutScreen from './src/features/workout/screens/ExecuteWorkoutScreen';
 
 const Stack = createStackNavigator();
 
@@ -169,34 +169,33 @@ export default function App() {
   }
 
   return (
-    <React.Suspense fallback={null}>
-      <NavigationContainer>
-        <Stack.Navigator
-          screenOptions={{
-            headerShown: false,
-            animationEnabled: false // Performance boost
-          }}
-        >
-          {!user ? (
-            <>
-              <Stack.Screen name="Login">
-                {(props) => <LoginScreen {...props} onLogin={handleLogin} />}
-              </Stack.Screen>
-              <Stack.Screen name="Register" component={RegisterScreen} />
-            </>
-          ) : userType === 'coach' ? (
-            <>
-              <Stack.Screen name="Home" component={CoachHomeScreen} />
-              <Stack.Screen name="CreateWorkout" component={WorkoutScreen} />
-            </>
-          ) : (
-            <>
-              <Stack.Screen name="Home" component={UserHomeScreen} />
-              <Stack.Screen name="ExecuteWorkout" component={ExecuteWorkoutScreen} />
-            </>
-          )}
-        </Stack.Navigator>
-      </NavigationContainer>
-    </React.Suspense>
+     <NavigationContainer>
+       <Stack.Navigator
+         screenOptions={{
+           headerShown: false,
+           animationEnabled: false
+         }}
+       >
+         {!user ? (
+           <>
+             <Stack.Screen name="Login">
+               {(props) => <LoginScreen {...props} onLogin={handleLogin} />}
+             </Stack.Screen>
+             <Stack.Screen name="Register" component={RegisterScreen} />
+           </>
+         ) : userType === 'coach' ? (
+           <>
+             <Stack.Screen name="Home" component={CoachHomeScreen} />
+             <Stack.Screen name="CreateWorkout" component={WorkoutScreen} />
+           </>
+         ) : (
+           <>
+             <Stack.Screen name="Home" component={UserHomeScreen} />
+             <Stack.Screen name="ExecuteWorkout" component={ExecuteWorkoutScreen} />
+           </>
+         )}
+       </Stack.Navigator>
+     </NavigationContainer>
   );
+
 }

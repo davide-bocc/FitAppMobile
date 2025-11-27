@@ -2,10 +2,13 @@
 /android/build/
 /android/app/build/
 /android/.gradle/
-/android/local.properties  # Contiene path SDK, da rigenerare su ogni macchina
-*.keystore               # Ignora tutti i keystore...
-!my-release-key.keystore  # ...tranne quello di release (se necessario)
-*.jks                    # Altri file chiave Android
+/android/local.properties
+*.keystore
+!my-release-key.keystore
+*.jks
+android/app-debug.zip
+/android/android/boost_1_83_0/
+*.iml
 
 # --- iOS ---
 /ios/Pods/
@@ -16,10 +19,10 @@
 xcuserdata/
 DerivedData/
 *.ipa
-*.mobileprovision        # File di provisioning iOS
-*.p12                    # Certificati iOS
+*.mobileprovision
+*.p12
 
-# --- Node/React Native ---
+# --- Node / React Native ---
 node_modules/
 npm-debug.log*
 yarn-debug.log*
@@ -30,18 +33,17 @@ web-build/
 *.jsbundle
 .metro-health-check*
 
-# --- Ambiente ---
-.env*.local              # Ignora .env locale, ma non .env principale!
-!.env.example            # Mantieni un esempio per riferimento
+# --- Ambiente / Config ---
+.env*.local
+!.env.example
 .DS_Store
 *.pem
 *.hprof
 .cxx/
 
-# --- Editor/IDE ---
+# --- Editor / IDE ---
 .idea/
 .vscode/
-*.iml
 *.swp
 *.swo
 
@@ -51,6 +53,18 @@ fastlane/Preview.html
 fastlane/screenshots
 fastlane/test_output
 
-# --- Altro ---
+# --- TypeScript / Build ---
 *.tsbuildinfo
 *.orig
+
+# --- React Native Generated / New Architecture ---
+android/build/generated/
+android/app/src/main/cpp/hermes/
+build/generated/
+hermes/
+
+# --- Visual Studio / Copilot ---
+.vs/
+*.zip
+*.tar.gz
+*.db

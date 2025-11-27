@@ -19,7 +19,7 @@ const LocalDB = {
       `SELECT data FROM ${table} WHERE id = ?`,
       [id]
     );
-    return result.rows.length > 0 ? JSON.parse(result.rows.item(0).data : null;
+    return result.rows.length > 0 ? JSON.parse(result.rows.item(0).data) : null;
   },
 
   async find(table, conditions = {}) {
