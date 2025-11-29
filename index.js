@@ -1,9 +1,5 @@
 import { AppRegistry } from 'react-native';
-import { registerRootComponent } from 'expo';
 import App from './App';
+import { name as appName } from './app.json';
 
-// Expo compatibility
-registerRootComponent(App);
-
-// React Native integration (must match MainActivity)
-AppRegistry.registerComponent("FitApp", () => App);
+AppRegistry.registerComponent(appName, () => App);

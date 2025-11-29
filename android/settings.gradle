@@ -1,4 +1,6 @@
 pluginManagement {
+    includeBuild("../node_modules/@react-native/gradle-plugin")
+
     repositories {
         gradlePluginPortal()
         google()
@@ -17,7 +19,8 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "FitAppMobile"
-include(":app")
+rootProject.name = 'FitAppMobile'
 
-includeBuild('../node_modules/@react-native/gradle-plugin')
+include ':app'
+
+

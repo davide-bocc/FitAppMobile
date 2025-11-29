@@ -1,0 +1,42 @@
+import groovy.json.JsonBuilder
+
+def autolinkingDir = new File(rootProject.projectDir, "android/build/generated/autolinking")
+def autolinkingFile = new File(autolinkingDir, "autolinking.json")
+
+
+// 🔥 Questo deve essere dichiarato SUBITO, prima dell'applicazione del plugin RN
+tasks.register("ensureAutolinkingJson") {
+    doLast {
+        if (!autolinkingDir.exists()) {
+            autolinkingDir.mkdirs()
+        }
+
+        if (!autolinkingFile.exists()) {
+
+            def content = [
+                    version: 1,
+                    dependencies: [:],
+                    platforms: [
+                            android: [:],
+                            ios    : [:]
+                    ]
+            ]
+
+            autolinkingFile.text = new JsonBuilder(content).toPrettyString()
+            println("✔ Created autolinking.json at: ${autolinkingFile.absolutePath}")
+        }
+    }
+}
+
+// 🔥 Hook nella fase DI CONFIGURAZIONE, PRIMA che il plugin React controlli il file
+gradle.projectsEvaluated {
+
+    def newArchTask = tasks.findByName("generateAutolinkingNewArchitectureFiles")
+    if (newArchTask != null) {
+        newArchTask.dependsOn("ensureAutolinkingJson")
+    }
+
+    if (tasks.findByName("preBuild")) {
+        tasks.preBuild.dependsOn("ensureAutolinkingJson")
+    }
+}

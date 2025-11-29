@@ -3,7 +3,37 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("com.facebook.react")
     id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
 }
+
+import groovy.json.JsonBuilder
+
+// === Genera autolinking.json subito, immediatamente all'apertura del build.gradle ===
+def autolinkingDir = file("$rootDir/build/generated/autolinking")
+if (!autolinkingDir.exists()) autolinkingDir.mkdirs()
+
+def autolinkingFile = new File(autolinkingDir, "autolinking.json")
+if (!autolinkingFile.exists()) {
+    def content = [
+        version: 1,
+        dependencies: [:],
+        platforms: [
+            android: [:],
+            ios: [:]
+        ]
+    ]
+    autolinkingFile.text = new groovy.json.JsonBuilder(content).toPrettyString()
+    println("✅ autolinking.json generated at: ${autolinkingFile.absolutePath}")
+} else {
+    println("✔ autolinking.json already exists")
+}
+
+project.ext.react = [
+    enableHermes: true,
+    enableSeparateBuildPerCPUArchitecture: false,
+    newArchEnabled: true,
+    autolinkingEnabled: false
+]
 
 android {
     namespace "fit.app.mobile"
@@ -12,10 +42,8 @@ android {
 
     defaultConfig {
         applicationId "fit.app.mobile"
-
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-
         versionCode 1
         versionName "1.0.0"
         multiDexEnabled true
@@ -39,24 +67,17 @@ android {
     }
 
     buildTypes {
-        debug {
-            signingConfig signingConfigs.debug
-        }
+        debug { signingConfig signingConfigs.debug }
         release {
             signingConfig signingConfigs.release
             minifyEnabled false
             shrinkResources false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
     }
 
     packagingOptions {
-        jniLibs {
-            useLegacyPackaging = false
-        }
+        jniLibs { useLegacyPackaging false }
         pickFirst "**/libc++_shared.so"
     }
 
@@ -65,23 +86,23 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
+    kotlinOptions { jvmTarget = "17" }
 
-    buildFeatures {
-        buildConfig true
-    }
+    buildFeatures { buildConfig true }
 }
 
 dependencies {
-    implementation platform("com.google.firebase:firebase-bom:33.3.0")
+    implementation platform("com.google.firebase:firebase-bom:${rootProject.ext.firebaseBomVersion}")
     implementation "androidx.multidex:multidex:2.0.1"
     implementation "com.google.firebase:firebase-auth"
     implementation "com.google.firebase:firebase-firestore"
+    implementation "com.google.firebase:firebase-crashlytics"
 
-    implementation("com.facebook.react:react-android")
-    implementation("com.facebook.react:hermes-android")
+    implementation "com.facebook.react:react-android"
+
+    if (hermesEnabled.toBoolean()) {
+        implementation "com.facebook.react:hermes-android"
+    } else {
+        implementation "org.webkit:android-jsc:+"
+    }
 }
-
-

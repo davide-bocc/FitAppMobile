@@ -3,37 +3,34 @@ package fit.app.mobile
 import android.app.Application
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactNativeHost
-import com.facebook.react.ReactPackage
 import com.facebook.react.defaults.DefaultReactNativeHost
 import com.facebook.soloader.SoLoader
 
 class MainApplication : Application(), ReactApplication {
 
     override val reactNativeHost: ReactNativeHost = object : DefaultReactNativeHost(this) {
-        override fun getPackages(): List<ReactPackage> {
-            // Ritorna una lista vuota per ora
-            return emptyList()
-        }
+        override fun getUseDeveloperSupport(): Boolean = BuildConfig.DEBUG
 
         override fun getJSMainModuleName(): String = "index"
 
-        override fun getUseDeveloperSupport(): Boolean = BuildConfig.DEBUG
+        // Abilita la nuova architettura solo se vuoi usare Fabric/Bridgeless
+        override val isNewArchEnabled: Boolean = true
 
-        // Disabilitato temporaneamente
-        override val isNewArchEnabled: Boolean = false
+        // Importantissimo: chiama il super per far partire l'autolinking
+        override fun getPackages() = super.getPackages()
     }
 
     override fun onCreate() {
         super.onCreate()
 
-        // Prova a caricare la libreria, ma ignora l'errore se non esiste
+        // Carica la libreria opzionale, ignora se non esiste
         try {
             System.loadLibrary("react_featureflagsjni")
         } catch (e: UnsatisfiedLinkError) {
-            // Ignora l'errore se la libreria non esiste
             println("Libreria react_featureflagsjni non trovata, usando valori di default")
         }
 
         SoLoader.init(this, false)
     }
 }
+
