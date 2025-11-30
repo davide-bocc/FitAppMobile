@@ -128,7 +128,7 @@ if(NOT EXISTS ${CMAKE_SOURCE_DIR}/../../../../node_modules/react-native/ReactAnd
 endif()
 
 # --- Subdirectory ReactAndroid e ReactCommon ---
-add_react_build_subdir(generated/source/codegen/jni)
+# add_react_build_subdir(generated/source/codegen/jni)
 
 # ❌ Terze parti non incluse (Prefab le gestisce)
 # add_react_third_party_ndk_subdir_safe(glog)

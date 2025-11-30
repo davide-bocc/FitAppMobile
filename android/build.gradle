@@ -11,15 +11,14 @@ buildscript {
     repositories {
         google()
         mavenCentral()
-        maven { url = uri("$rootDir/../node_modules/react-native/android") }
-        maven { url = uri("$rootDir/../node_modules/@react-native/gradle-plugin") }
+        maven { url = uri("../node_modules/react-native/android") }
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:8.1.1")
+        classpath("com.android.tools.build:gradle:8.2.1")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
         classpath("com.google.gms:google-services:4.4.2")
         classpath("com.google.firebase:firebase-crashlytics-gradle:2.9.9")
-        classpath(files("../../node_modules/@react-native/gradle-plugin"))
+        classpath(files("../node_modules/react-native/android/react-native-gradle-plugin.jar"))
     }
 }
 

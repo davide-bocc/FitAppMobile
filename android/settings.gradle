@@ -19,8 +19,8 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = 'FitAppMobile'
+rootProject.name = "FitAppMobile"
 
-include ':app'
+include(":app")
 
 

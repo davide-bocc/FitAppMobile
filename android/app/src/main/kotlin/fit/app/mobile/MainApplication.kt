@@ -4,20 +4,21 @@ import android.app.Application
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactNativeHost
 import com.facebook.react.defaults.DefaultReactNativeHost
+import com.facebook.react.ReactPackage
+import com.facebook.react.shell.MainReactPackage
 import com.facebook.soloader.SoLoader
 
 class MainApplication : Application(), ReactApplication {
 
     override val reactNativeHost: ReactNativeHost = object : DefaultReactNativeHost(this) {
         override fun getUseDeveloperSupport(): Boolean = BuildConfig.DEBUG
-
         override fun getJSMainModuleName(): String = "index"
-
-        // Abilita la nuova architettura solo se vuoi usare Fabric/Bridgeless
         override val isNewArchEnabled: Boolean = true
 
-        // Importantissimo: chiama il super per far partire l'autolinking
-        override fun getPackages() = super.getPackages()
+        override fun getPackages(): MutableList<ReactPackage> {
+            // Lista dei pacchetti, anche solo MainReactPackage è sufficiente per partire
+            return mutableListOf(MainReactPackage())
+        }
     }
 
     override fun onCreate() {
@@ -33,4 +34,5 @@ class MainApplication : Application(), ReactApplication {
         SoLoader.init(this, false)
     }
 }
+
 

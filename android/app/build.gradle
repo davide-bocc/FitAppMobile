@@ -6,35 +6,6 @@ plugins {
     id("com.google.firebase.crashlytics")
 }
 
-import groovy.json.JsonBuilder
-
-// === Genera autolinking.json subito, immediatamente all'apertura del build.gradle ===
-def autolinkingDir = file("$rootDir/build/generated/autolinking")
-if (!autolinkingDir.exists()) autolinkingDir.mkdirs()
-
-def autolinkingFile = new File(autolinkingDir, "autolinking.json")
-if (!autolinkingFile.exists()) {
-    def content = [
-        version: 1,
-        dependencies: [:],
-        platforms: [
-            android: [:],
-            ios: [:]
-        ]
-    ]
-    autolinkingFile.text = new groovy.json.JsonBuilder(content).toPrettyString()
-    println("✅ autolinking.json generated at: ${autolinkingFile.absolutePath}")
-} else {
-    println("✔ autolinking.json already exists")
-}
-
-project.ext.react = [
-    enableHermes: true,
-    enableSeparateBuildPerCPUArchitecture: false,
-    newArchEnabled: true,
-    autolinkingEnabled: false
-]
-
 android {
     namespace "fit.app.mobile"
     compileSdkVersion rootProject.ext.compileSdkVersion
@@ -76,11 +47,6 @@ android {
         }
     }
 
-    packagingOptions {
-        jniLibs { useLegacyPackaging false }
-        pickFirst "**/libc++_shared.so"
-    }
-
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
@@ -88,21 +54,25 @@ android {
 
     kotlinOptions { jvmTarget = "17" }
 
-    buildFeatures { buildConfig true }
+    afterEvaluate {
+        tasks.matching { it.name.contains("buildCMake") }.configureEach {
+            enabled = false
+        }
+    }
 }
-
 dependencies {
     implementation platform("com.google.firebase:firebase-bom:${rootProject.ext.firebaseBomVersion}")
     implementation "androidx.multidex:multidex:2.0.1"
     implementation "com.google.firebase:firebase-auth"
     implementation "com.google.firebase:firebase-firestore"
     implementation "com.google.firebase:firebase-crashlytics"
+    implementation "com.facebook.react:react-android:0.73.0"
 
-    implementation "com.facebook.react:react-android"
-
+    def hermesEnabled = true
     if (hermesEnabled.toBoolean()) {
         implementation "com.facebook.react:hermes-android"
     } else {
         implementation "org.webkit:android-jsc:+"
     }
 }
+
