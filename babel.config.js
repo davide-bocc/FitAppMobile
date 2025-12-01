@@ -7,5 +7,7 @@ module.exports = {
         relativeSourceLocation: true,
       },
     ],
+    // Supporto per class private methods
+    ['@babel/plugin-proposal-private-methods', { loose: true }],
   ],
 };

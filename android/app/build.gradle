@@ -68,6 +68,7 @@ dependencies {
     implementation "com.google.firebase:firebase-crashlytics"
     implementation "com.facebook.react:react-android:0.73.0"
 
+
     def hermesEnabled = true
     if (hermesEnabled.toBoolean()) {
         implementation "com.facebook.react:hermes-android"
