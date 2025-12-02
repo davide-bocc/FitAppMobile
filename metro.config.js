@@ -1,8 +1,10 @@
-const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
+const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
+const exclusionList = require('metro-config/src/defaults/exclusionList');
+const path = require('path');
 
 const defaultConfig = getDefaultConfig(__dirname);
 
-const config = {
+module.exports = mergeConfig(defaultConfig, {
   transformer: {
     getTransformOptions: async () => ({
       transform: {
@@ -13,9 +15,11 @@ const config = {
   },
   resolver: {
     alias: {
-      'react-native-reanimated': '../node_modules/react-native-reanimated',
+      'react-native-reanimated': path.resolve(__dirname, 'node_modules/react-native-reanimated'),
     },
+    blockList: exclusionList([]),
   },
-};
-
-module.exports = mergeConfig(defaultConfig, config);
+  watchFolders: [
+    path.resolve(__dirname, 'node_modules/@react-native/js-polyfills'),
+  ],
+});
