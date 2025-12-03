@@ -1,4 +1,3 @@
-// F:\Projects\FitAppMobile\src\database\firebase\useNetworkStatus.js
 import { useEffect, useState, useRef } from 'react';
 import NetInfo from '@react-native-community/netinfo';
 import { Platform, AppState } from 'react-native';

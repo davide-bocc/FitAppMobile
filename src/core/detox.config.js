@@ -3,7 +3,7 @@ module.exports = {
     "android.emu.debug": {
       device: {
         type: "android.emulator",
-        avdName: "Pixel_4_API_30" // Sostituisci con il nome del tuo AVD
+        avdName: "Pixel_4_API_30"
       },
       app: {
         type: "android.apk",

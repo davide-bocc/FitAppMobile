@@ -9,7 +9,7 @@ module.exports = mergeConfig(defaultConfig, {
     getTransformOptions: async () => ({
       transform: {
         experimentalImportSupport: false,
-        inlineRequires: true,
+        inlineRequires: false, // disabilitato per Firebase su Windows
       },
     }),
   },
@@ -17,9 +17,18 @@ module.exports = mergeConfig(defaultConfig, {
     alias: {
       'react-native-reanimated': path.resolve(__dirname, 'node_modules/react-native-reanimated'),
     },
-    blockList: exclusionList([]),
+    blockList: exclusionList([
+      /.*\/__tests__\/.*/,
+      /.*\/\.git\/.*/,
+      /.*\/\.vscode\/.*/,
+    ]),
+    extraNodeModules: {
+      '@react-native-firebase/functions': path.resolve(__dirname, 'node_modules/@react-native-firebase/functions/lib'),
+      'react-native/js-polyfills': path.resolve(__dirname, 'node_modules/@react-native/js-polyfills'), // 🔹 aggiunto
+    },
   },
   watchFolders: [
-    path.resolve(__dirname, 'node_modules/@react-native/js-polyfills'),
+    path.resolve(__dirname, 'node_modules/@react-native-firebase/functions/lib'),
+    path.resolve(__dirname, 'node_modules/@react-native/js-polyfills'), // 🔹 aggiunto
   ],
 });

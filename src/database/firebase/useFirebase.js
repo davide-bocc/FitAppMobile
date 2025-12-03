@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getFirebase, checkHealth, getFirebaseInfo } from './firebaseConfig';
+import { getFirebase } from './firebaseConfig';
 
 /**
  * Hook React per usare Firebase nei componenti
@@ -10,49 +10,81 @@ export const useFirebase = () => {
   const [error, setError] = useState(null);
   const [health, setHealth] = useState(null);
 
+  const checkHealth = async (fb) => {
+    try {
+      if (!fb?.db) return null;
+      await fb.db.collection('_healthcheck').doc('test').get();
+      return { overall: 'healthy', timestamp: new Date().toISOString() };
+    } catch (err) {
+      return { overall: 'unhealthy', error: err.message, timestamp: new Date().toISOString() };
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
+    let healthTimer = null;
 
     const init = async () => {
       try {
         setLoading(true);
+
+        // Ottieni servizi Firebase
         const fb = await getFirebase();
 
-        if (mounted) {
-          setFirebase(fb);
-          setError(null);
+        if (!mounted) return;
 
-          // Check iniziale salute
-          const initialHealth = await checkHealth();
-          setHealth(initialHealth);
-        }
+        setFirebase(fb);
+        setError(null);
+
+        // Health check iniziale
+        const initialHealth = await checkHealth(fb);
+        setHealth(initialHealth);
+
+        // Health check periodico
+        healthTimer = setInterval(async () => {
+          if (!mounted) return;
+          const newHealth = await checkHealth(fb);
+          setHealth(newHealth);
+        }, 60000);
+
       } catch (err) {
         if (mounted) {
           setError(err);
           console.error('[useFirebase] Errore inizializzazione:', err);
         }
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        mounted && setLoading(false);
       }
     };
 
     init();
 
-    // Health check periodico
-    const healthInterval = setInterval(async () => {
-      if (mounted && firebase) {
-        const newHealth = await checkHealth();
-        setHealth(newHealth);
-      }
-    }, 60000); // Ogni minuto
-
     return () => {
       mounted = false;
-      clearInterval(healthInterval);
+      if (healthTimer) clearInterval(healthTimer);
     };
-  }, []);
+  }, []); // ← IMPORTANTE: nessuna dipendenza, evita loop infinito
+
+  const refreshHealth = async () => {
+    if (!firebase) return null;
+    const newHealth = await checkHealth(firebase);
+    setHealth(newHealth);
+    return newHealth;
+  };
+
+  const getStatus = () => {
+    if (loading) return 'loading';
+    if (error) return 'error';
+    if (health?.overall === 'unhealthy') return 'unhealthy';
+    return 'ready';
+  };
+
+  const getStatusColor = () => {
+    if (loading) return '#FFA000';
+    if (error) return '#F44336';
+    if (health?.overall === 'unhealthy') return '#FF9800';
+    return '#4CAF50';
+  };
 
   return {
     // Stato
@@ -61,39 +93,27 @@ export const useFirebase = () => {
     error,
     health,
 
-    // Servizi (convenience accessors)
-    auth: firebase?.auth,
-    db: firebase?.db,
-    functions: firebase?.functions,
-    storage: firebase?.storage,
+    // Servizi Firebase (istanze già create da firebaseConfig)
+    auth: firebase?.auth || null,
+    db: firebase?.db || null,
+    functions: firebase?.functions || null,
+    storage: firebase?.storage || null,
+    database: firebase?.database || null,
 
-    // Info
-    isEmulator: firebase?.isEmulator,
-    usingEmulators: firebase?.usingEmulators,
+
+    // Info rete/emulatori
+    isEmulator: firebase?.networkState?.isEmulator,
+    usingEmulators: firebase?.networkState?.useEmulators,
     networkState: firebase?.networkState,
 
     // Metodi
-    refreshHealth: async () => {
-      const newHealth = await checkHealth();
-      setHealth(newHealth);
-      return newHealth;
-    },
+    refreshHealth,
 
-    // Helper per UI
-    getStatus: () => {
-      if (loading) return 'loading';
-      if (error) return 'error';
-      if (health?.overall === 'unhealthy') return 'unhealthy';
-      return 'ready';
-    },
-
-    getStatusColor: () => {
-      if (loading) return '#FFA000'; // Amber
-      if (error) return '#F44336'; // Red
-      if (health?.overall === 'unhealthy') return '#FF9800'; // Orange
-      return '#4CAF50'; // Green
-    },
+    // Helper UI
+    getStatus,
+    getStatusColor,
   };
 };
 
 export default useFirebase;
+

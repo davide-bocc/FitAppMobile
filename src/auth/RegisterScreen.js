@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Alert, StyleSheet } from 'react-native';
-import { AuthService } from '../services/AuthService';
+import { AuthService } from './AuthService';
 import AuthForm from '../components/AuthForm';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import OfflineQueue from '../utils/OfflineQueue';

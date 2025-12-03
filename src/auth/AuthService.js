@@ -5,8 +5,8 @@ import {
   signOut,
   onAuthStateChanged
 } from 'firebase/auth';
-import { auth } from '../../database/firebase/firebaseConfig';
-import UserModel from '../models/UserModel';
+import { auth } from '../database/firebase/firebaseConfig';
+import UserModel from './UserModel';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Cache keys

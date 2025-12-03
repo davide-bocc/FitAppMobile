@@ -66,6 +66,7 @@ dependencies {
     implementation "com.google.firebase:firebase-auth"
     implementation "com.google.firebase:firebase-firestore"
     implementation "com.google.firebase:firebase-crashlytics"
+    implementation "com.google.firebase:firebase-functions-ktx"
     implementation "com.facebook.react:react-android:0.73.0"
 
 

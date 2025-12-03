@@ -3,16 +3,25 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
-import functions from '@react-native-firebase/functions';
 import storage from '@react-native-firebase/storage';
 import database from '@react-native-firebase/database';
 
-// ============= CONFIG FIREBASE =============
-const firebaseConfig = {
-  // NON serve, @react-native-firebase legge dai file nativi
-};
+// Import dinamico e sicuro di functions
+let functionsInstance = null;
+try {
+  // Controlla se il modulo è installato
+  const functionsModule = require('@react-native-firebase/functions');
+  if (functionsModule && functionsModule.default) {
+    functionsInstance = functionsModule.default;
+  }
+} catch (error) {
+  console.warn('⚠️ Firebase Functions non disponibile:', error.message);
+}
 
-// ============= INIZIALIZZAZIONE =============
+// ================= CONFIG FIREBASE =================
+const firebaseConfig = {}; // @react-native-firebase legge dai file nativi
+
+// ================= INIZIALIZZAZIONE =================
 let firebaseInitialized = false;
 let firebaseServices = null;
 let networkState = null;
@@ -32,21 +41,15 @@ const getNetworkState = async () => {
   try {
     const state = await NetInfo.fetch();
     const isEmulator = await detectEmulator();
-    let emulatorHost = isEmulator ? '10.0.2.2' : null;
-    let useEmulators = __DEV__ && isEmulator;
-    return {
-      isConnected: state.isConnected,
-      type: state.type,
-      isEmulator,
-      useEmulators,
-      emulatorHost,
-    };
+    const emulatorHost = isEmulator ? '10.0.2.2' : null;
+    const useEmulators = __DEV__ && isEmulator;
+    return { isConnected: state.isConnected, type: state.type, isEmulator, useEmulators, emulatorHost };
   } catch {
     return { isConnected: false, useEmulators: false, emulatorHost: null, isEmulator: false };
   }
 };
 
-const checkFirebaseHealth = async (db, timeout = 5000) => {
+const checkFirebaseHealth = async (db) => {
   try {
     const docRef = firestore().collection('_healthcheck').doc('test');
     await docRef.get();
@@ -56,32 +59,48 @@ const checkFirebaseHealth = async (db, timeout = 5000) => {
   }
 };
 
+// ================= INIZIALIZZA TUTTE LE ISTANZE =================
 export const initializeFirebase = async () => {
   if (firebaseInitialized && firebaseServices) return firebaseServices;
 
   networkState = await getNetworkState();
 
-  // Emulatori
+  // Configuro emulatori se necessario
   if (networkState.useEmulators && networkState.emulatorHost) {
-    console.log(`[Firebase] Configurando emulatori su: ${networkState.emulatorHost}`);
+    console.log(`[Firebase] Configurazione emulatori su: ${networkState.emulatorHost}`);
     firestore().useEmulator(networkState.emulatorHost, 8080);
-    functions().useEmulator(networkState.emulatorHost, 5001);
     auth().useEmulator(`http://${networkState.emulatorHost}:9099`);
     database().useEmulator(networkState.emulatorHost, 9000);
   }
 
-  // Salva servizi
+  // Inizializza functions solo se disponibile
+  let functionsService = null;
+  if (functionsInstance) {
+    try {
+      functionsService = functionsInstance();
+      if (networkState.useEmulators && networkState.emulatorHost) {
+        console.log(`[Firebase] Emulator Functions → ${networkState.emulatorHost}:5001`);
+        functionsService.useEmulator(networkState.emulatorHost, 5001);
+      }
+    } catch (error) {
+      console.warn('⚠️ Errore inizializzazione Functions:', error.message);
+    }
+  }
+
   firebaseServices = {
     auth: auth(),
     db: firestore(),
-    functions: functions(),
+    functions: functionsService, // Può essere null
     storage: storage(),
     database: database(),
     networkState,
   };
+
+  console.log('[Firebase Inizializzato] Servizi disponibili:',
+    Object.keys(firebaseServices).filter(key => firebaseServices[key] !== null));
+
   firebaseInitialized = true;
 
-  // Health check periodico
   if (__DEV__) {
     healthCheckInterval = setInterval(async () => {
       const health = await checkFirebaseHealth(firebaseServices.db);
@@ -92,6 +111,7 @@ export const initializeFirebase = async () => {
   return firebaseServices;
 };
 
+// ================= GETTER SICURI =================
 export const getFirebase = async () => {
   if (!firebaseInitialized) return await initializeFirebase();
   return firebaseServices;
@@ -103,7 +123,7 @@ export const cleanupFirebase = () => {
   firebaseServices = null;
 };
 
-// ============= CACHE FIRESTORE =============
+// ================= CACHE FIRESTORE =================
 export const fetchWithCache = async (collectionName, queryConditions = [], cacheDuration = 3600000) => {
   const cacheKey = `cache_${collectionName}_${JSON.stringify(queryConditions)}`;
   const timestampKey = `${cacheKey}_timestamp`;
@@ -119,8 +139,7 @@ export const fetchWithCache = async (collectionName, queryConditions = [], cache
     }
 
     const { db } = await getFirebase();
-    const q = db.collection(collectionName);
-    const snapshot = await q.get();
+    const snapshot = await db.collection(collectionName).get();
     const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
     await AsyncStorage.setItem(cacheKey, JSON.stringify(data));
@@ -142,18 +161,23 @@ export const invalidateCache = async (collectionName) => {
   return cacheKeys.length;
 };
 
-// ============= EXPORT HELPERS =============
-export const getAuthService = () => initializeFirebase().then(s => s.auth);
-export const getDb = () => initializeFirebase().then(s => s.db);
-export const getFunctionsService = () => initializeFirebase().then(s => s.functions);
-export const getStorageService = () => initializeFirebase().then(s => s.storage);
-export const getDatabaseService = () => initializeFirebase().then(s => s.database);
-export const getFirebaseInfo = () => ({
-  isInitialized: firebaseInitialized,
-  networkState,
-});
+// ================= EXPORT HELPERS =================
+export const getAuthService = async () => (await getFirebase()).auth;
+export const getDb = async () => (await getFirebase()).db;
 
-// AppState listener
+export const getFunctionsService = async () => {
+  const firebase = await getFirebase();
+  if (!firebase.functions) {
+    throw new Error('❌ Firebase Functions non è installato. Esegui: npm install @react-native-firebase/functions');
+  }
+  return firebase.functions;
+};
+
+export const getStorageService = async () => (await getFirebase()).storage;
+export const getDatabaseService = async () => (await getFirebase()).database;
+export const getFirebaseInfo = () => ({ isInitialized: firebaseInitialized, networkState });
+
+// ================= APPSTATE LISTENER =================
 AppState.addEventListener('change', nextAppState => {
   if (nextAppState === 'background' || nextAppState === 'inactive') {
     if (healthCheckInterval) clearInterval(healthCheckInterval);

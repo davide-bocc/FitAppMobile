@@ -1,6 +1,6 @@
 import { doc, getDoc } from 'firebase/firestore';
-import { db, fetchWithCache } from '../../database/firebase/firebaseConfig';
-import LocalDB from '../../database/local/LocalDB';
+import { db, fetchWithCache } from '../database/firebase/firebaseConfig';
+import LocalDB from '../database/local/LocalDB';
 
 export default class UserModel {
   static async getUserLocal(uid) {

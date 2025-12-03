@@ -4,6 +4,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { executeQuery } from './src/database/local/database';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
+import functions, { firebase } from '@react-native-firebase/functions';
+
 
 // Lazy loading delle schermate
 import LoginScreen from './src/auth/LoginScreen';
@@ -22,6 +24,19 @@ export default function App() {
   const [initializing, setInitializing] = useState(true);
   const [user, setUser] = useState(null);
   const [userType, setUserType] = useState(null);
+
+  // 🔹 Test rapido Functions
+  useEffect(() => {
+    console.log('functions import:', functions);
+    console.log('firebase.functions():', firebase.functions());
+
+    if (firebase.functions) {
+      const testFunc = firebase.functions().httpsCallable('testFunction');
+      testFunc({ hello: 'world' })
+        .then(res => console.log('Callable result:', res.data))
+        .catch(err => console.error('Callable error:', err));
+    }
+  }, []);
 
   const checkLocalUser = useCallback(async () => {
     if (userCache) return userCache;
