@@ -1,59 +1,70 @@
-import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
+import firestore from '@react-native-firebase/firestore';
 import { db } from '../../database/firebase/firebaseConfig';
 import LocalDB from '../../database/local/LocalDB';
 
-export class AssignmentService {
-  static async assignWorkout(coachId, studentId, workoutId) {
-    const assignment = {
-      coachId,
-      studentId,
-      workoutId,
-      assignedAt: new Date().toISOString(),
-      isSynced: false
-    };
+export class WorkoutManager {
 
-    // 1. Salva localmente
-    await LocalDB.create('assignments', assignment);
+  static async createWorkout(workoutData) {
+    const localId = await LocalDB.create('workouts', workoutData);
 
-    // 2. Sincronizza in background
     try {
-      const docRef = await addDoc(collection(db, 'assignments'), {
-        ...assignment,
+      const ref = await firestore()
+        .collection('workouts')
+        .add(workoutData);
+
+      await LocalDB.update('workouts', localId, {
+        firebaseId: ref.id,
         isSynced: true
       });
-      await LocalDB.update('assignments', assignment.id, {
-        firebaseId: docRef.id,
-        isSynced: true
-      });
-    } catch (error) {
-      console.warn('Firebase sync failed', error);
+
+      return ref.id;
+    } catch (err) {
+      console.warn('Sync failed, keeping local copy', err);
+      return localId;
     }
   }
 
-  static async getAssignedWorkouts(studentId) {
-    // Prima controlla locale
-    const localResults = await LocalDB.find('assignments', { studentId });
-
-    if (localResults.length > 0) {
-      return localResults;
+  static async getWorkout(workoutId, isLocalId = false) {
+    if (isLocalId) {
+      return LocalDB.get('workouts', workoutId);
     }
 
-    // Se non ci sono risultati locali, cerca su Firebase
-    const q = query(
-      collection(db, 'assignments'),
-      where('studentId', '==', studentId)
-    );
+    const localResult = await LocalDB.find('workouts', { firebaseId: workoutId });
+    if (localResult) return localResult;
 
-    const snapshot = await getDocs(q);
-    const results = [];
+    const docSnap = await firestore()
+      .collection('workouts')
+      .doc(workoutId)
+      .get();
 
-    snapshot.forEach(doc => {
-      results.push({ id: doc.id, ...doc.data() });
-    });
+    if (docSnap.exists) {
+      const data = docSnap.data();
+      await LocalDB.create('workouts', { ...data, firebaseId: workoutId });
+      return data;
+    }
 
-    // Cache locale
-    await LocalDB.bulkInsert('assignments', results);
+    return null;
+  }
 
-    return results;
+  static subscribeToWorkouts(callback) {
+    return firestore()
+      .collection('workouts')
+      .onSnapshot(async snapshot => {
+        snapshot.docChanges().forEach(async change => {
+          if (change.type === 'added' || change.type === 'modified') {
+            await LocalDB.upsert('workouts', {
+              ...change.doc.data(),
+              firebaseId: change.doc.id
+            });
+          }
+        });
+
+        const workouts = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        callback(workouts);
+      });
   }
 }

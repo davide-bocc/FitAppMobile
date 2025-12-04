@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, FlatList, Button, StyleSheet } from 'react-native';
 import useOfflineFirst from '../hooks/useOfflineFirst';
-import { query, where, getDocs } from 'firebase/firestore';
+import firestore from '@react-native-firebase/firestore';
 import { db, auth } from '../../../database/firebase/firebaseConfig';
 
 const UserHomeScreen = ({ navigation }) => {

@@ -1,19 +1,10 @@
-import { db } from '../database/firebase/firebaseConfig';
+
 import LocalDB from '../database/local/LocalDB';
 import { checkNetworkStatus } from '../utils/network';
-import { 
-  collection, 
-  query, 
-  where, 
-  getDocs, 
-  writeBatch,
-  doc
-} from 'firebase/firestore';
+import firestore from '@react-native-firebase/firestore';
 
 class OfflineSync {
-  /**
-   * Sincronizza tutti i dati non sincronizzati
-   */
+
   async syncAll() {
     if (!await checkNetworkStatus()) {
       console.log('Nessuna connessione, salvataggio solo locale');
@@ -38,40 +29,32 @@ class OfflineSync {
     }
   }
 
-  /**
-   * Sincronizza una singola collezione
-   */
   async _syncCollection(collectionName) {
     const unsyncedItems = await LocalDB.getUnsynced(collectionName);
     if (unsyncedItems.length === 0) {
       return { count: 0, status: 'ALREADY_SYNCED' };
     }
 
-    const batch = writeBatch(db);
+    const batch = firestore().batch();
     const updates = [];
 
     try {
-      // Preparazione batch
       unsyncedItems.forEach(item => {
-        const docRef = item.firebase_id 
-          ? doc(db, collectionName, item.firebase_id)
-          : doc(collection(db, collectionName));
+        const docRef = item.firebase_id
+          ? firestore().collection(collectionName).doc(item.firebase_id)
+          : firestore().collection(collectionName).doc();
 
         const { id, firebase_id, last_sync, ...cleanData } = item;
         batch.set(docRef, cleanData);
         updates.push({ id, firebase_id: docRef.id });
       });
 
-      // Esecuzione batch
       await batch.commit();
 
-      // Aggiornamento stato locale
       await Promise.all(
-        updates.map(({ id, firebase_id }) => 
-          LocalDB.update(collectionName, id, { 
-            firebase_id, 
-            last_sync: new Date().toISOString() 
-          })
+        updates.map(({ id, firebase_id }) =>
+          LocalDB.update(collectionName, id, { firebase_id, last_sync: new Date().toISOString() })
+        )
       );
 
       return { count: updates.length, status: 'SUCCESS' };
@@ -81,23 +64,18 @@ class OfflineSync {
     }
   }
 
-  /**
-   * Scarica gli ultimi aggiornamenti dal server
-   */
   async pullUpdates(collectionName, lastSyncDate) {
     if (!await checkNetworkStatus()) {
       throw new Error('NETWORK_REQUIRED');
     }
 
     try {
-      const q = lastSyncDate
-        ? query(
-            collection(db, collectionName),
-            where('updatedAt', '>', lastSyncDate)
-          )
-        : collection(db, collectionName);
+      let queryRef = firestore().collection(collectionName);
+      if (lastSyncDate) {
+        queryRef = queryRef.where('updatedAt', '>', lastSyncDate);
+      }
 
-      const snapshot = await getDocs(q);
+      const snapshot = await queryRef.get();
       const items = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
@@ -108,10 +86,7 @@ class OfflineSync {
         await LocalDB.bulkInsert(collectionName, items);
       }
 
-      return {
-        count: items.length,
-        lastSync: new Date().toISOString()
-      };
+      return { count: items.length, lastSync: new Date().toISOString() };
     } catch (error) {
       console.error(`Pull updates failed for ${collectionName}:`, error);
       throw error;

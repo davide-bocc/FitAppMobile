@@ -1,10 +1,11 @@
+// ExecuteWorkoutScreen.js
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, Button, StyleSheet, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import LocalDB from '../../../database/local/LocalDB';
 import TimerService from '../../../services/TimerService';
-import { doc, getDoc } from 'firebase/firestore';
-import { db, fetchWithCache } from '../../../database/firebase/firebaseConfig';
+import firestore from '@react-native-firebase/firestore';
+import { fetchWithCache } from '../../../database/firebase/firebaseConfig';
 
 const ExecuteWorkoutScreen = ({ route, navigation }) => {
   const { workoutId } = route.params;
@@ -15,14 +16,12 @@ const ExecuteWorkoutScreen = ({ route, navigation }) => {
     isResting: false,
     timeLeft: 0
   });
+  const [progress, setProgress] = useState(0);
   const timerRef = useRef(null);
 
-  // Carica il workout con cache avanzata
   const loadWorkout = async () => {
     try {
-      // Usa il sistema di cache centralizzato
       const cachedWorkout = await fetchWithCache('workouts', [], workoutId);
-
       if (cachedWorkout) {
         setWorkout(cachedWorkout);
         return;
@@ -38,7 +37,6 @@ const ExecuteWorkoutScreen = ({ route, navigation }) => {
     }
   };
 
-  // Cleanup timer
   useFocusEffect(
     React.useCallback(() => {
       loadWorkout();
@@ -46,7 +44,6 @@ const ExecuteWorkoutScreen = ({ route, navigation }) => {
     }, [workoutId])
   );
 
-  // Timer countdown
   useEffect(() => {
     if (!currentExercise.isResting) return;
 
@@ -63,14 +60,15 @@ const ExecuteWorkoutScreen = ({ route, navigation }) => {
     return () => clearInterval(timerRef.current);
   }, [currentExercise.isResting]);
 
-  // Calcolo progresso
   useEffect(() => {
     if (!workout) return;
 
     const totalSets = workout.exercises.reduce((sum, ex) => sum + ex.sets, 0);
-    const completedSets = workout.exercises
-      .slice(0, currentExercise.index)
-      .reduce((sum, ex) => sum + ex.sets, 0) + (currentExercise.set - 1);
+    const completedSets =
+      workout.exercises
+        .slice(0, currentExercise.index)
+        .reduce((sum, ex) => sum + ex.sets, 0) +
+      (currentExercise.set - 1);
 
     setProgress(Math.round((completedSets / totalSets) * 100));
   }, [currentExercise, workout]);
@@ -79,7 +77,6 @@ const ExecuteWorkoutScreen = ({ route, navigation }) => {
     const exercise = workout.exercises[currentExercise.index];
 
     if (currentExercise.set < exercise.sets) {
-      // Avvia periodo di riposo
       setCurrentExercise(prev => ({
         ...prev,
         isResting: true,
@@ -87,7 +84,6 @@ const ExecuteWorkoutScreen = ({ route, navigation }) => {
       }));
       TimerService.playSound();
     } else {
-      // Passa all'esercizio successivo o completa
       if (currentExercise.index < workout.exercises.length - 1) {
         setCurrentExercise({
           index: currentExercise.index + 1,
@@ -145,8 +141,10 @@ const ExecuteWorkoutScreen = ({ route, navigation }) => {
       </View>
 
       <Text style={styles.nextExercise}>
-        Prossimo: {currentExercise.index < workout.exercises.length - 1 ?
-          workout.exercises[currentExercise.index + 1].name : 'Fine'}
+        Prossimo:{' '}
+        {currentExercise.index < workout.exercises.length - 1
+          ? workout.exercises[currentExercise.index + 1].name
+          : 'Fine'}
       </Text>
     </View>
   );

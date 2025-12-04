@@ -1,4 +1,4 @@
-import { doc, getDoc } from 'firebase/firestore';
+import firestore from '@react-native-firebase/firestore';
 import { db, fetchWithCache } from '../database/firebase/firebaseConfig';
 import LocalDB from '../database/local/LocalDB';
 

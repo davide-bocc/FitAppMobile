@@ -1,7 +1,7 @@
 import { db } from '../firebase/firebaseConfig';
 import LocalDB from '../local/LocalDB';
 import { checkNetworkStatus } from '../../utils/network';
-import { collection, writeBatch, doc } from 'firebase/firestore';
+import firestore from '@react-native-firebase/firestore';
 
 const OfflineSync = {
   async syncAll() {

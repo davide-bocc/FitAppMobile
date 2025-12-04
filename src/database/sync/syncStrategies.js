@@ -1,116 +1,75 @@
-import { db } from '../firebase/firebaseConfig';
 import LocalDB from '../local/LocalDB';
 import { checkNetworkStatus } from '../../utils/network';
-import {
-  collection,
-  doc,
-  writeBatch,
-  getDocs,
-  query,
-  where,
-  setDoc
-} from 'firebase/firestore';
+import firestore from '@react-native-firebase/firestore';
 
-// Strategie di sincronizzazione specifiche per tipo di dato
 const SyncStrategies = {
-  /**
-   * Sincronizza gli utenti con gestione speciale degli UID
-   */
+
   async syncUsers() {
     const unsyncedUsers = await LocalDB.getUnsynced('users');
-    if (unsyncedUsers.length === 0) return;
+    if (!unsyncedUsers.length) return;
 
-    const batch = writeBatch(db);
-    const localUpdates = [];
+    const batch = firestore().batch();
+    const updates = [];
 
     for (const user of unsyncedUsers) {
       const docRef = user.firebase_id
-        ? doc(db, 'users', user.firebase_id)
-        : doc(collection(db, 'users'));
+        ? firestore().collection('users').doc(user.firebase_id)
+        : firestore().collection('users').doc();
 
-      // Mantieni l'UID originale per i riferimenti
       const userData = { ...user };
-      if (!user.firebase_id && user.id) {
-        userData.original_local_id = user.id;
-      }
+      if (!user.firebase_id && user.id) userData.original_local_id = user.id;
 
       batch.set(docRef, userData);
-      localUpdates.push({
-        id: user.id,
-        updates: {
-          firebase_id: docRef.id,
-          last_sync: new Date().toISOString()
-        }
-      });
+      updates.push({ id: user.id, firebase_id: docRef.id });
     }
 
     await batch.commit();
 
-    // Aggiorna i riferimenti locali
     await Promise.all(
-      localUpdates.map(({ id, updates }) =>
-        LocalDB.update('users', id, updates)
+      updates.map(({ id, firebase_id }) =>
+        LocalDB.update('users', id, { firebase_id, last_sync: new Date().toISOString() })
       )
     );
   },
 
-  /**
-   * Sincronizza gli allenamenti con dipendenze dagli utenti
-   */
   async syncWorkouts() {
     const unsyncedWorkouts = await LocalDB.getUnsynced('workouts');
-    if (unsyncedWorkouts.length === 0) return;
+    if (!unsyncedWorkouts.length) return;
 
-    const batch = writeBatch(db);
-    const localUpdates = [];
+    const batch = firestore().batch();
+    const updates = [];
 
     for (const workout of unsyncedWorkouts) {
-      // Verifica che il coach esista su Firebase
       const coach = await LocalDB.get('users', workout.coachId);
-      if (!coach?.firebase_id) {
-        console.warn(`Coach ${workout.coachId} not synced, skipping workout`);
-        continue;
-      }
+      if (!coach?.firebase_id) continue;
 
       const docRef = workout.firebase_id
-        ? doc(db, 'workouts', workout.firebase_id)
-        : doc(collection(db, 'workouts'));
+        ? firestore().collection('workouts').doc(workout.firebase_id)
+        : firestore().collection('workouts').doc();
 
-      batch.set(docRef, {
-        ...workout,
-        coachId: coach.firebase_id // Riferimento a Firebase ID
-      });
-
-      localUpdates.push({
-        id: workout.id,
-        updates: {
-          firebase_id: docRef.id,
-          last_sync: new Date().toISOString()
-        }
-      });
+      batch.set(docRef, { ...workout, coachId: coach.firebase_id });
+      updates.push({ id: workout.id, firebase_id: docRef.id });
     }
 
-    await batch.commit();
-    await Promise.all(
-      localUpdates.map(({ id, updates }) =>
-        LocalDB.update('workouts', id, updates)
-      )
-    );
+    if (updates.length) {
+      await batch.commit();
+      await Promise.all(
+        updates.map(({ id, firebase_id }) =>
+          LocalDB.update('workouts', id, { firebase_id, last_sync: new Date().toISOString() })
+        )
+      );
+    }
   },
 
-  /**
-   * Sincronizza gli esercizi con validazione delle dipendenze
-   */
   async syncExercises() {
     const unsyncedExercises = await LocalDB.getUnsynced('exercises');
-    if (unsyncedExercises.length === 0) return;
+    if (!unsyncedExercises.length) return;
 
-    const batch = writeBatch(db);
-    const localUpdates = [];
+    const batch = firestore().batch();
+    const updates = [];
     const skipped = [];
 
     for (const exercise of unsyncedExercises) {
-      // Verifica che l'allenamento esista su Firebase
       const workout = await LocalDB.get('workouts', exercise.workoutId);
       if (!workout?.firebase_id) {
         skipped.push(exercise.id);
@@ -118,89 +77,55 @@ const SyncStrategies = {
       }
 
       const docRef = exercise.firebase_id
-        ? doc(db, 'exercises', exercise.firebase_id)
-        : doc(collection(db, 'exercises'));
+        ? firestore().collection('exercises').doc(exercise.firebase_id)
+        : firestore().collection('exercises').doc();
 
-      batch.set(docRef, {
-        ...exercise,
-        workoutId: workout.firebase_id
-      });
-
-      localUpdates.push({
-        id: exercise.id,
-        updates: {
-          firebase_id: docRef.id,
-          last_sync: new Date().toISOString()
-        }
-      });
+      batch.set(docRef, { ...exercise, workoutId: workout.firebase_id });
+      updates.push({ id: exercise.id, firebase_id: docRef.id });
     }
 
-    if (skipped.length > 0) {
-      console.warn(`Exercises skipped due to missing workout: ${skipped.join(', ')}`);
-    }
+    if (skipped.length) console.warn(`Skipped exercises: ${skipped.join(', ')}`);
 
-    if (localUpdates.length > 0) {
+    if (updates.length) {
       await batch.commit();
       await Promise.all(
-        localUpdates.map(({ id, updates }) =>
-          LocalDB.update('exercises', id, updates)
+        updates.map(({ id, firebase_id }) =>
+          LocalDB.update('exercises', id, { firebase_id, last_sync: new Date().toISOString() })
         )
       );
     }
   },
 
-  /**
-   * Sincronizzazione bidirezionale per le assegnazioni
-   */
   async syncAssignments() {
-    // Push delle modifiche locali
     await this._pushLocalAssignments();
-
-    // Pull degli aggiornamenti remoti
     await this._pullRemoteAssignments();
   },
 
   async _pushLocalAssignments() {
     const unsynced = await LocalDB.getUnsynced('assignments');
-    if (unsynced.length === 0) return;
+    if (!unsynced.length) return;
 
-    const batch = writeBatch(db);
-    const localUpdates = [];
+    const batch = firestore().batch();
+    const updates = [];
 
     for (const assignment of unsynced) {
-      // Verifica che coach e studente esistano su Firebase
       const coach = await LocalDB.get('users', assignment.coachId);
       const student = await LocalDB.get('users', assignment.studentId);
-
-      if (!coach?.firebase_id || !student?.firebase_id) {
-        console.warn('Missing references for assignment', assignment.id);
-        continue;
-      }
+      if (!coach?.firebase_id || !student?.firebase_id) continue;
 
       const docRef = assignment.firebase_id
-        ? doc(db, 'assignments', assignment.firebase_id)
-        : doc(collection(db, 'assignments'));
+        ? firestore().collection('assignments').doc(assignment.firebase_id)
+        : firestore().collection('assignments').doc();
 
-      batch.set(docRef, {
-        ...assignment,
-        coachId: coach.firebase_id,
-        studentId: student.firebase_id
-      });
-
-      localUpdates.push({
-        id: assignment.id,
-        updates: {
-          firebase_id: docRef.id,
-          last_sync: new Date().toISOString()
-        }
-      });
+      batch.set(docRef, { ...assignment, coachId: coach.firebase_id, studentId: student.firebase_id });
+      updates.push({ id: assignment.id, firebase_id: docRef.id });
     }
 
-    if (localUpdates.length > 0) {
+    if (updates.length) {
       await batch.commit();
       await Promise.all(
-        localUpdates.map(({ id, updates }) =>
-          LocalDB.update('assignments', id, updates)
+        updates.map(({ id, firebase_id }) =>
+          LocalDB.update('assignments', id, { firebase_id, last_sync: new Date().toISOString() })
         )
       );
     }
@@ -210,56 +135,33 @@ const SyncStrategies = {
     if (!await checkNetworkStatus()) return;
 
     const lastSync = await LocalDB.getSyncMetadata('assignments_last_sync');
-    const q = lastSync
-      ? query(
-          collection(db, 'assignments'),
-          where('last_updated', '>', lastSync)
-        )
-      : collection(db, 'assignments');
+    let queryRef = firestore().collection('assignments');
 
-    const snapshot = await getDocs(q);
-    const updates = [];
-
-    for (const doc of snapshot.docs) {
-      const data = doc.data();
-      updates.push({
-        id: `${data.coachId}_${data.studentId}_${data.workoutId}`,
-        ...data,
-        firebase_id: doc.id
-      });
+    if (lastSync) {
+      queryRef = queryRef.where('last_updated', '>', lastSync);
     }
 
-    if (updates.length > 0) {
+    const snapshot = await queryRef.get();
+    const updates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), firebase_id: doc.id }));
+
+    if (updates.length) {
       await LocalDB.bulkInsert('assignments', updates);
-      await LocalDB.setSyncMetadata(
-        'assignments_last_sync',
-        new Date().toISOString()
-      );
+      await LocalDB.setSyncMetadata('assignments_last_sync', new Date().toISOString());
     }
   },
 
-  /**
-   * Sincronizzazione completa con strategie di fallback
-   */
   async fullSync() {
-    if (!await checkNetworkStatus()) {
-      throw new Error('Network required for full sync');
-    }
+    if (!await checkNetworkStatus()) throw new Error('Network required for full sync');
 
     try {
-      // Ordine di sincronizzazione importante
       await this.syncUsers();
       await this.syncWorkouts();
       await this.syncExercises();
       await this.syncAssignments();
-
       return { success: true };
     } catch (error) {
       console.error('Full sync failed:', error);
-      return {
-        success: false,
-        error: error.message
-      };
+      return { success: false, error: error.message };
     }
   }
 };

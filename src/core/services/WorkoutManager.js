@@ -1,10 +1,4 @@
-import {
-  collection,
-  addDoc,
-  doc,
-  getDoc,
-  onSnapshot
-} from 'firebase/firestore';
+import firestore from '@react-native-firebase/firestore';
 import { db } from '../../database/firebase/firebaseConfig';
 import LocalDB from '../../database/local/LocalDB';
 

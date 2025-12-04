@@ -1,15 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert, FlatList, TouchableOpacity, Modal } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  StyleSheet,
+  Alert,
+  FlatList,
+  TouchableOpacity,
+  Modal
+} from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LocalDB from '../../../database/local/LocalDB';
-import { collection, addDoc } from 'firebase/firestore';
-import { db, fetchWithCache } from '../../../database/firebase/firebaseConfig';
+import firestore from '@react-native-firebase/firestore';
+import { fetchWithCache } from '../../../database/firebase/firebaseConfig';
 
 const WorkoutScreen = ({ navigation }) => {
   const [workout, setWorkout] = useState({ name: '', exercises: [] });
   const [availableExercises, setAvailableExercises] = useState([]);
-  const [newExercise, setNewExercise] = useState({ id: '', sets: 3, reps: 10, restTime: 60 });
+  const [newExercise, setNewExercise] = useState({
+    id: '',
+    sets: 3,
+    reps: 10,
+    restTime: 60
+  });
   const [isExerciseModalVisible, setIsExerciseModalVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -48,7 +63,7 @@ const WorkoutScreen = ({ navigation }) => {
     setNewExercise({ id: availableExercises[0]?.id || '', sets: 3, reps: 10, restTime: 60 });
   };
 
-  const handleRemoveExercise = (index) => {
+  const handleRemoveExercise = index => {
     setWorkout(prev => ({
       ...prev,
       exercises: prev.exercises.filter((_, i) => i !== index)
@@ -77,12 +92,12 @@ const WorkoutScreen = ({ navigation }) => {
         updatedAt: new Date().toISOString()
       };
 
-      // 1. Salva in locale immediatamente
+      // 1. Salva in locale
       const localId = await LocalDB.create('workouts', workoutData);
 
-      // 2. Sincronizza con Firebase in background
+      // 2. Sincronizza con Firebase
       try {
-        const docRef = await addDoc(collection(db, 'workouts'), workoutData);
+        const docRef = await firestore().collection('workouts').add(workoutData);
         await LocalDB.update('workouts', localId, { firebase_id: docRef.id });
       } catch (firebaseError) {
         console.warn('Firebase sync failed, keeping local copy', firebaseError);
@@ -210,3 +225,4 @@ const styles = StyleSheet.create({
 });
 
 export default WorkoutScreen;
+
