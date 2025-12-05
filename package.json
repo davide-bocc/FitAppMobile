@@ -25,11 +25,6 @@
     "@react-navigation/native": "^6.1.18",
     "@react-navigation/stack": "^6.4.1",
     "memoize-one": "^5.2.1",
-    "metro": "^0.74.0",
-    "metro-cache": "^0.74.0",
-    "metro-config": "^0.74.0",
-    "metro-core": "^0.74.0",
-    "metro-file-map": "0.74.0",
     "react": "18.2.0",
     "react-native": "0.74.4",
     "react-native-gesture-handler": "^2.9.1",
@@ -59,28 +54,6 @@
     "react-native-device-info": "^15.0.1",
     "react-test-renderer": "18.2.0",
     "typescript": "5.3.3"
-  },
-  "resolutions": {
-    "metro": "0.74.0",
-    "metro-config": "0.74.0",
-    "metro-core": "0.74.0",
-    "metro-cache": "0.74.0",
-    "metro-file-map": "0.74.0",
-    "**/metro": "0.74.0",
-    "**/metro-config": "0.74.0",
-    "**/metro-core": "0.74.0",
-    "**/metro-file-map": "0.74.0",
-    "**/metro-cache": "0.74.0"
-  },
-  "overrides": {
-    "@react-native/community-cli-plugin": {
-      "metro": "0.74.0",
-      "metro-config": "0.74.0",
-      "metro-core": "0.74.0",
-      "metro-cache": "0.74.0",
-      "metro-file-map": "0.74.0",
-      "metro-transform-worker": "0.74.0"
-    }
   },
   "engines": {
     "node": ">=18"

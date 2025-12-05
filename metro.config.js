@@ -4,6 +4,20 @@ const path = require('path');
 
 const defaultConfig = getDefaultConfig(__dirname);
 
+// Risolutore custom per memoize-one (evita problemi con SHA-1)
+function customResolveRequest(context, moduleName, platform) {
+  if (moduleName === 'memoize-one') {
+    return {
+      filePath: path.resolve(
+        __dirname,
+        'node_modules/memoize-one/dist/memoize-one.cjs.js'
+      ),
+      type: 'sourceFile',
+    };
+  }
+  return context.resolveRequest(context, moduleName, platform);
+}
+
 module.exports = mergeConfig(defaultConfig, {
   transformer: {
     getTransformOptions: async () => ({
@@ -14,23 +28,41 @@ module.exports = mergeConfig(defaultConfig, {
     }),
   },
   resolver: {
+    ...defaultConfig.resolver,
+    resolveRequest: customResolveRequest,
+
+    // Alias per evitare conflitti di versione
     alias: {
-      'react-native-reanimated': path.resolve(__dirname, 'node_modules/react-native-reanimated'),
+      'react-native-reanimated': path.resolve(
+        __dirname,
+        'node_modules/react-native-reanimated'
+      ),
     },
-    sourceExts: [...defaultConfig.resolver.sourceExts, 'cjs'],
+
+    // Estensioni supportate (aggiunte cjs per memoize-one)
+    sourceExts: [
+      ...defaultConfig.resolver.sourceExts,
+      'cjs',
+      'cjs.js',
+      'cjs.jsx',
+      'js',
+      'jsx',
+    ],
+
+    // Blocklist minima per evitare esclusioni errate
     blockList: exclusionList([
       /.*\/__tests__\/.*/,
       /.*\/\.git\/.*/,
       /.*\/\.vscode\/.*/,
-      /node_modules\/firebase\/node_modules\/.*/,
-      /node_modules\/@react-native-async-storage\/async-storage\/android\/.*/,
-      /.*\/build\/.*/,
-      /.*\/dist\/.*/,
       /.*\/\.gradle\/.*/,
       /.*\/tmp\/.*/,
     ]),
   },
+
   watchFolders: [
     path.resolve(__dirname, 'node_modules'),
+    path.resolve(__dirname, 'node_modules/@react-native'),
   ],
 });
+
+
