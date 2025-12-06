@@ -4,7 +4,7 @@ const path = require('path');
 
 const defaultConfig = getDefaultConfig(__dirname);
 
-// Risolutore custom per memoize-one (evita problemi con SHA-1)
+// Resolver custom per memoize-one e js-polyfills/console
 function customResolveRequest(context, moduleName, platform) {
   if (moduleName === 'memoize-one') {
     return {
@@ -15,23 +15,39 @@ function customResolveRequest(context, moduleName, platform) {
       type: 'sourceFile',
     };
   }
+  if (moduleName === '@react-native/js-polyfills/console') {
+    return {
+      filePath: path.resolve(
+        __dirname,
+        'node_modules/@react-native/js-polyfills/console.js'
+      ),
+      type: 'sourceFile',
+    };
+  }
   return context.resolveRequest(context, moduleName, platform);
 }
 
 module.exports = mergeConfig(defaultConfig, {
   transformer: {
     getTransformOptions: async () => ({
-      transform: {
-        experimentalImportSupport: false,
-        inlineRequires: false,
-      },
+      transform: { experimentalImportSupport: false, inlineRequires: false },
     }),
   },
   resolver: {
     ...defaultConfig.resolver,
+
     resolveRequest: customResolveRequest,
 
-    // Alias per evitare conflitti di versione
+    // Blocklist minima: solo cartelle che vogliamo davvero escludere
+    blockList: exclusionList([
+      /.*\/__tests__\/.*/,
+      /.*\/\.git\/.*/,
+      /.*\/\.vscode\/.*/,
+      /.*\/\.gradle\/.*/,
+      /.*\/tmp\/.*/,
+    ]),
+
+    // Alias per evitare conflitti di versioni
     alias: {
       'react-native-reanimated': path.resolve(
         __dirname,
@@ -39,7 +55,7 @@ module.exports = mergeConfig(defaultConfig, {
       ),
     },
 
-    // Estensioni supportate (aggiunte cjs per memoize-one)
+    // Estensioni supportate
     sourceExts: [
       ...defaultConfig.resolver.sourceExts,
       'cjs',
@@ -48,21 +64,13 @@ module.exports = mergeConfig(defaultConfig, {
       'js',
       'jsx',
     ],
-
-    // Blocklist minima per evitare esclusioni errate
-    blockList: exclusionList([
-      /.*\/__tests__\/.*/,
-      /.*\/\.git\/.*/,
-      /.*\/\.vscode\/.*/,
-      /.*\/\.gradle\/.*/,
-      /.*\/tmp\/.*/,
-    ]),
   },
 
+  // Watch folders: node_modules e il percorso problematico di js-polyfills
   watchFolders: [
     path.resolve(__dirname, 'node_modules'),
     path.resolve(__dirname, 'node_modules/@react-native'),
+    path.resolve(__dirname, 'node_modules/@react-native/js-polyfills'),
   ],
 });
-
 
