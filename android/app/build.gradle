@@ -6,6 +6,8 @@ plugins {
     id("com.google.firebase.crashlytics")
 }
 
+def hermesEnabled = true
+
 android {
     namespace "fit.app.mobile"
     compileSdkVersion rootProject.ext.compileSdkVersion
@@ -62,19 +64,19 @@ android {
 }
 dependencies {
     implementation platform("com.google.firebase:firebase-bom:${rootProject.ext.firebaseBomVersion}")
-    implementation "androidx.multidex:multidex:2.0.1"
-    implementation "com.google.firebase:firebase-auth"
-    implementation "com.google.firebase:firebase-firestore"
-    implementation "com.google.firebase:firebase-crashlytics"
+    implementation "com.google.firebase:firebase-auth-ktx"
+    implementation "com.google.firebase:firebase-firestore-ktx"
+    implementation "com.google.firebase:firebase-crashlytics-ktx"
     implementation "com.google.firebase:firebase-functions-ktx"
-    implementation "com.facebook.react:react-android:0.73.0"
 
+    implementation "androidx.multidex:multidex:2.0.1"
+    implementation "com.facebook.react:react-android:0.74.4"
 
-    def hermesEnabled = true
     if (hermesEnabled.toBoolean()) {
         implementation "com.facebook.react:hermes-android"
     } else {
         implementation "org.webkit:android-jsc:+"
     }
 }
+
 
