@@ -8,6 +8,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:438843414790:android:b10a9383df76c43ff9e687",
+        "android_client_info": {
+          "package_name": "fit.app.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDROJLd8K50RAW-9VITgNdyIz-Wb7NkW_M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:438843414790:android:bd2f92f8fba72bd0f9e687",
         "android_client_info": {
           "package_name": "fit.app.mobile"

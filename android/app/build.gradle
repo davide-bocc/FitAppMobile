@@ -2,8 +2,8 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.facebook.react")
-    id("com.google.gms.google-services")
     id("com.google.firebase.crashlytics")
+    id("com.google.gms.google-services")
 }
 
 def hermesEnabled = true
@@ -64,10 +64,12 @@ android {
 }
 dependencies {
     implementation platform("com.google.firebase:firebase-bom:${rootProject.ext.firebaseBomVersion}")
+
     implementation "com.google.firebase:firebase-auth-ktx"
     implementation "com.google.firebase:firebase-firestore-ktx"
     implementation "com.google.firebase:firebase-crashlytics-ktx"
     implementation "com.google.firebase:firebase-functions-ktx"
+    implementation 'com.google.firebase:firebase-storage-ktx'
 
     implementation "androidx.multidex:multidex:2.0.1"
     implementation "com.facebook.react:react-android:0.74.4"

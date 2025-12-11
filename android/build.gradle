@@ -16,7 +16,7 @@ buildscript {
     dependencies {
         classpath("com.android.tools.build:gradle:8.2.1")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
-        classpath("com.google.gms:google-services:4.4.2")
+        classpath("com.google.gms:google-services:4.4.3")
         classpath("com.google.firebase:firebase-crashlytics-gradle:2.9.9")
         classpath(files("../node_modules/react-native/android/react-native-gradle-plugin.jar"))
     }
@@ -34,4 +34,20 @@ allprojects {
 
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
+}
+
+subprojects { subproject ->
+    afterEvaluate {
+        if (subproject.plugins.hasPlugin('java') || subproject.plugins.hasPlugin('kotlin')) {
+            subproject.tasks.withType(JavaCompile).configureEach {
+                sourceCompatibility = '17'
+                targetCompatibility = '17'
+            }
+            subproject.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+                kotlinOptions {
+                    jvmTarget = "17"
+                }
+            }
+        }
+    }
 }
