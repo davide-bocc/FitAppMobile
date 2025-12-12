@@ -26,7 +26,7 @@
     "memoize-one": "^5.2.1",
     "react": "18.2.0",
     "react-native": "0.74.4",
-    "react-native-gesture-handler": "^2.9.1",
+    "react-native-gesture-handler": "^2.29.1",
     "react-native-quick-sqlite": "^8.2.7",
     "react-native-reanimated": "^2.14.4",
     "react-native-safe-area-context": "^5.6.2",

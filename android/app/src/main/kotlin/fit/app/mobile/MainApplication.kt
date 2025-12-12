@@ -14,7 +14,7 @@ class MainApplication : Application(), ReactApplication {
         override fun getUseDeveloperSupport(): Boolean = BuildConfig.DEBUG
         override fun getJSMainModuleName(): String = "index"
         override val isNewArchEnabled: Boolean = true
-        override fun getPackages(): MutableList<ReactPackage> = mutableListOf(MainReactPackage())
+        override fun getPackages(): MutableList<ReactPackage> = mutableListOf()
     }
 
     override fun onCreate() {

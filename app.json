@@ -1,55 +1,41 @@
 {
-  "expo": {
-    "name": "FitApp",
-    "slug": "FitApp",
-    "version": "1.0.0",
-    "orientation": "portrait",
+  "name": "FitAppMobile",
+  "displayName": "FitAppMobile",
+
+  "android": {
+    "package": "fit.app.mobile",
+    "adaptiveIcon": {
+      "foregroundImage": "./assets/adaptive-icon.png",
+      "backgroundColor": "#FFFFFF"
+    },
+    "enableShrinkResourcesInReleaseBuilds": true
+  },
+
+  "ios": {
+    "bundleIdentifier": "fit.app.mobile",
+    "supportsTablet": true
+  },
+
+  "assets": {
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "updates": {
-      "fallbackToCacheTimeout": 0
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "fit.app.mobile"
-    },
+    "favicon": "./assets/favicon.png"
+  },
+
+  "buildProperties": {
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFFFFF"
-      },
-      "package": "fit.app.mobile",
-      "enableShrinkResourcesInReleaseBuilds": true
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "plugins": [
-      "expo-splash-screen",
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "compileSdkVersion": 34,
-            "targetSdkVersion": 34,
-            "minSdkVersion": 23
-          }
-        }
-      ]
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "ce12925e-db1c-4d64-b590-5248ae7f6644"
-      }
-    },
+      "compileSdkVersion": 34,
+      "targetSdkVersion": 34,
+      "minSdkVersion": 23
+    }
+  },
+
+  "eas": {
+    "projectId": "ce12925e-db1c-4d64-b590-5248ae7f6644",
     "owner": "davide-bocc"
   }
 }

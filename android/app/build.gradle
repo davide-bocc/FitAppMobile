@@ -6,7 +6,9 @@ plugins {
     id("com.google.gms.google-services")
 }
 
-def hermesEnabled = true
+project.ext.react = [
+    enableHermes: true
+]
 
 android {
     namespace "fit.app.mobile"
