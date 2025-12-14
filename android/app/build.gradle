@@ -7,7 +7,9 @@ plugins {
 }
 
 project.ext.react = [
-    enableHermes: true
+    enableHermes: true,
+    newArchEnabled: true,
+    reactNativeBridgelessEnabled: false
 ]
 
 android {
