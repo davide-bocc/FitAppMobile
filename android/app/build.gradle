@@ -9,13 +9,14 @@ plugins {
 project.ext.react = [
     enableHermes: true,
     newArchEnabled: true,
-    reactNativeBridgelessEnabled: false
+    reactNativeCodegenDir: "$buildDir/generated/codegen",
+    reactNativeBridgelessEnabled: true
 ]
 
 android {
     namespace "fit.app.mobile"
     compileSdkVersion rootProject.ext.compileSdkVersion
-    ndkVersion rootProject.ext.ndkVersion
+    ndkVersion "26.2.11394342"
 
     defaultConfig {
         applicationId "fit.app.mobile"
@@ -60,9 +61,16 @@ android {
 
     kotlinOptions { jvmTarget = "17" }
 
+    sourceSets {
+        main {
+            java.srcDirs += 'build/generated/rncli/src/main/java'
+        }
+    }
+
+
     afterEvaluate {
         tasks.matching { it.name.contains("buildCMake") }.configureEach {
-            enabled = false
+            enabled = true
         }
     }
 }
