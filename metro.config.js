@@ -1,4 +1,3 @@
-// metro.config.js
 const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
 
 const defaultConfig = getDefaultConfig(__dirname);
@@ -12,7 +11,8 @@ module.exports = mergeConfig(defaultConfig, {
       },
     }),
   },
-
+  reactNativePath: './node_modules/react-native',
   resolver: {
+    sourceExts: ['jsx','js','ts','tsx','cjs'],
   },
 });

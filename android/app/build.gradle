@@ -7,16 +7,17 @@ plugins {
 }
 
 project.ext.react = [
-    enableHermes: true,
-    newArchEnabled: true,
-    reactNativeCodegenDir: "$buildDir/generated/codegen",
-    reactNativeBridgelessEnabled: true
+    enableHermes: false,
+    newArchEnabled: false,
+    reactNativeCodegenDir: "$buildDir/generated/source/codegen",
+    reactNativeBridgelessEnabled: true,
+    codegenEnabled: false
 ]
 
 android {
     namespace "fit.app.mobile"
     compileSdkVersion rootProject.ext.compileSdkVersion
-    ndkVersion "26.2.11394342"
+    ndkVersion rootProject.ext.ndkVersion
 
     defaultConfig {
         applicationId "fit.app.mobile"
@@ -59,7 +60,9 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
-    kotlinOptions { jvmTarget = "17" }
+    kotlinOptions {
+        jvmTarget = "17"
+    }
 
     sourceSets {
         main {
@@ -67,13 +70,17 @@ android {
         }
     }
 
-
     afterEvaluate {
         tasks.matching { it.name.contains("buildCMake") }.configureEach {
             enabled = true
         }
     }
+
+    buildFeatures {
+        buildConfig true
+    }
 }
+
 dependencies {
     implementation platform("com.google.firebase:firebase-bom:${rootProject.ext.firebaseBomVersion}")
 
@@ -84,13 +91,12 @@ dependencies {
     implementation 'com.google.firebase:firebase-storage-ktx'
 
     implementation "androidx.multidex:multidex:2.0.1"
+
     implementation "com.facebook.react:react-android:0.74.4"
 
-    if (hermesEnabled.toBoolean()) {
+    if (project.ext.react.enableHermes.toBoolean()) {
         implementation "com.facebook.react:hermes-android"
     } else {
         implementation "org.webkit:android-jsc:+"
     }
 }
-
-

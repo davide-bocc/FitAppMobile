@@ -9,20 +9,20 @@ import com.facebook.soloader.SoLoader
 
 class MainApplication : Application(), ReactApplication {
 
-    private val newArchitectureEnabled = true
+    override val reactNativeHost: ReactNativeHost =
+        object : DefaultReactNativeHost(this) {
 
-    override val reactNativeHost: ReactNativeHost = object : DefaultReactNativeHost(this) {
-        override fun getUseDeveloperSupport(): Boolean = BuildConfig.DEBUG
-        override fun getJSMainModuleName(): String = "index"
+            override fun getUseDeveloperSupport(): Boolean = BuildConfig.DEBUG
 
-        override fun getPackages(): List<ReactPackage> {
-            return mutableListOf()
+            override fun getJSMainModuleName(): String = "index"
+
+            override fun getPackages(): List<ReactPackage> {
+                return mutableListOf()
+            }
+
+            override val isNewArchEnabled: Boolean
+                get() = BuildConfig.IS_NEW_ARCHITECTURE_ENABLED
         }
-
-        // Nuova architettura attiva
-        override val isNewArchEnabled: Boolean
-            get() = newArchitectureEnabled
-    }
 
     override fun onCreate() {
         super.onCreate()
