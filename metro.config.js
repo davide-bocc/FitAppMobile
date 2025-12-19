@@ -4,15 +4,10 @@ const defaultConfig = getDefaultConfig(__dirname);
 
 module.exports = mergeConfig(defaultConfig, {
   transformer: {
-    getTransformOptions: async () => ({
-      transform: {
-        experimentalImportSupport: false,
-        inlineRequires: true,
-      },
-    }),
+    babelTransformerPath: require.resolve('react-native-svg-transformer'),
   },
-  reactNativePath: './node_modules/react-native',
   resolver: {
-    sourceExts: ['jsx','js','ts','tsx','cjs'],
+    assetExts: defaultConfig.resolver.assetExts.filter(ext => ext !== 'svg'),
+    sourceExts: [...defaultConfig.resolver.sourceExts, 'svg'],
   },
 });

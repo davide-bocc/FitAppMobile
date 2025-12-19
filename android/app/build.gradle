@@ -7,7 +7,7 @@ plugins {
 }
 
 project.ext.react = [
-    enableHermes: false,
+    enableHermes: true,
     newArchEnabled: false,
     reactNativeCodegenDir: "$buildDir/generated/source/codegen",
     reactNativeBridgelessEnabled: true,
@@ -100,3 +100,5 @@ dependencies {
         implementation "org.webkit:android-jsc:+"
     }
 }
+
+

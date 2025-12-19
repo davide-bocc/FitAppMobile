@@ -1,10 +1,6 @@
-import SQLite from 'react-native-sqlite-storage';
+import SQLite from 'react-native-quick-sqlite';
 
-const db = SQLite.openDatabase({
-  name: 'fitapp_v2.db',
-  location: 'default',
-  createFromLocation: '~www/fitapp_preload.db', // opzionale
-});
+const db = SQLite.open({ name: 'fitapp_v2.db', location: 'default' });
 
 export const executeQuery = (sql, params = []) => {
   return new Promise((resolve, reject) => {
