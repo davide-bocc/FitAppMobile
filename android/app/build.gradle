@@ -7,7 +7,8 @@ plugins {
 }
 
 project.ext.react = [
-    enableHermes: true
+    enableHermes: true,
+    //cliPath: "../../node_modules/react-native/cli.js"
 ]
 
 android {
@@ -59,12 +60,12 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
-    /*
+
     sourceSets {
         main {
             java.srcDirs += 'build/generated/rncli/src/main/java'
         }
-    }*/
+    }
 
     afterEvaluate {
         tasks.matching { it.name.contains("buildCMake") }.configureEach {
@@ -78,20 +79,23 @@ android {
 }
 
 dependencies {
+    // Firebase
     implementation platform("com.google.firebase:firebase-bom:${rootProject.ext.firebaseBomVersion}")
-
     implementation "com.google.firebase:firebase-auth-ktx"
     implementation "com.google.firebase:firebase-firestore-ktx"
     implementation "com.google.firebase:firebase-crashlytics-ktx"
     implementation "com.google.firebase:firebase-functions-ktx"
-    implementation 'com.google.firebase:firebase-storage-ktx'
+    implementation "com.google.firebase:firebase-storage-ktx"
 
+    // MultiDex
     implementation "androidx.multidex:multidex:2.0.1"
 
-    implementation("com.facebook.react:react-android")
-    implementation("com.facebook.react:hermes-android")
+    // Moduli Android base
+    implementation "androidx.appcompat:appcompat:1.6.1"
+    implementation "androidx.core:core-ktx:1.12.0"
 
-    implementation "com.facebook.react:react-native:+"
+    implementation "com.facebook.react:react-native:0.74.4"
 }
+
 
 

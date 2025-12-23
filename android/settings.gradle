@@ -5,11 +5,8 @@ pluginManagement {
         gradlePluginPortal()
         google()
         mavenCentral()
+        maven { url "$rootDir/../node_modules/react-native/android" }
     }
-}
-
-plugins {
-    id("com.facebook.react.settings")
 }
 
 dependencyResolutionManagement {
@@ -17,12 +14,11 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven { url("$rootDir/../node_modules/react-native/android") }
-        maven { url("$rootDir/../node_modules/hermes-engine/maven") }
-        maven { url("https://www.jitpack.io") }
+        maven { url "$rootDir/../node_modules/react-native/android" }
+        maven { url "$rootDir/../node_modules/hermes-engine/maven" }
+        maven { url "https://www.jitpack.io" }
     }
 }
 
 rootProject.name = "FitAppMobile"
-
 include(":app")
