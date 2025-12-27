@@ -6,10 +6,16 @@ plugins {
     id("com.google.gms.google-services")
 }
 
+/*
 project.ext.react = [
     enableHermes: true,
     //cliPath: "../../node_modules/react-native/cli.js"
 ]
+*/
+
+react {
+    hermesEnabled = true
+}
 
 android {
     namespace "fit.app.mobile"
