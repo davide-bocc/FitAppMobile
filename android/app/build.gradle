@@ -6,14 +6,6 @@ plugins {
     id("com.google.gms.google-services")
 }
 
-
-project.ext.react = [
-    enableHermes: true,
-    //cliPath: "../../node_modules/react-native/cli.js"
-]
-
-
-
 android {
     namespace "fit.app.mobile"
     compileSdkVersion 34
@@ -85,6 +77,20 @@ android {
     }
 }
 
+react {
+    root = file("../../")
+    reactNativeDir = file("../../node_modules/react-native")
+    codegenDir = file("../../node_modules/react-native-codegen")
+    cliFile = file("../../node_modules/react-native/cli.js")
+
+    // Variants debug
+    debuggableVariants = ["liteDebug", "prodDebug"]
+
+    // Hermes commands (Windows)
+    hermesCommand = file("../../node_modules/react-native/sdks/hermesc/win64-bin/hermesc").absolutePath
+}
+
+
 dependencies {
     // Firebase
     implementation platform("com.google.firebase:firebase-bom:${rootProject.ext.firebaseBomVersion}")
@@ -94,6 +100,8 @@ dependencies {
     implementation "com.google.firebase:firebase-functions-ktx"
     implementation "com.google.firebase:firebase-storage-ktx"
 
+    implementation "com.facebook.react:react-native:+"
+
     // MultiDex
     implementation "androidx.multidex:multidex:2.0.1"
 
@@ -101,8 +109,15 @@ dependencies {
     implementation "androidx.appcompat:appcompat:1.6.1"
     implementation "androidx.core:core-ktx:1.12.0"
 
-    implementation "com.facebook.react:react-native:0.74.4"
-}
+    // React Native core
+    implementation "com.facebook.react:react-android"
 
+    // Hermes/JSC condizionale
+    if (hermesEnabled.toBoolean()) {
+        implementation("com.facebook.react:hermes-android")
+    } else {
+        implementation jscFlavor
+    }
+}
 
 

@@ -9,7 +9,6 @@ module.exports = {
     },
   },
   dependencies: {
-  /*
     "react-native-gesture-handler": {},
     "react-native-sqlite-storage": {},
     "react-native-sound": {},
@@ -23,6 +22,5 @@ module.exports = {
     "@react-native-picker/picker": {},
     "react-native-quick-sqlite": {},
     "react-native-device-info": {},
-    */
   },
 };
