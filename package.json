@@ -28,7 +28,7 @@
     "react-native": "^0.74.4",
     "react-native-gesture-handler": "^2.30.0",
     "react-native-quick-sqlite": "^8.2.7",
-    "react-native-reanimated": "^3.19.4",
+    "react-native-reanimated": "^3.19.5",
     "react-native-safe-area-context": "^5.6.2",
     "react-native-screens": "^3.37.0",
     "react-native-sound": "^0.13.0",

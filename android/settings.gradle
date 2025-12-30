@@ -15,7 +15,7 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven { url "$rootDir/../node_modules/react-native/android" }
-        maven { url "$rootDir/../node_modules/hermes-engine/maven" }
+        maven { url "$rootDir/../node_modules/hermes-engine/android" }
         maven { url "https://www.jitpack.io" }
     }
 }

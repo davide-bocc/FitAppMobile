@@ -8,20 +8,17 @@ plugins {
 
 android {
     namespace "fit.app.mobile"
-    compileSdkVersion 34
+    compileSdk 34
     ndkVersion "26.2.11394342"
 
     defaultConfig {
         applicationId "fit.app.mobile"
-        minSdkVersion rootProject.ext.minSdkVersion
-        targetSdkVersion rootProject.ext.targetSdkVersion
+        minSdk rootProject.ext.minSdkVersion
+        targetSdk rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0.0"
-        multiDexEnabled true
 
-        ndk {
-            abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
-        }
+        multiDexEnabled true
     }
 
     signingConfigs {
@@ -42,12 +39,17 @@ android {
     }
 
     buildTypes {
-        debug { signingConfig signingConfigs.debug }
+        debug {
+            signingConfig signingConfigs.debug
+        }
         release {
             signingConfig signingConfigs.release
             minifyEnabled false
             shrinkResources false
-            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 
@@ -58,18 +60,6 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
-    }
-
-    sourceSets {
-        main {
-            java.srcDirs += 'build/generated/rncli/src/main/java'
-        }
-    }
-
-    afterEvaluate {
-        tasks.matching { it.name.contains("buildCMake") }.configureEach {
-            enabled = true
-        }
     }
 
     buildFeatures {
@@ -83,15 +73,26 @@ react {
     codegenDir = file("../../node_modules/react-native-codegen")
     cliFile = file("../../node_modules/react-native/cli.js")
 
-    // Variants debug
-    debuggableVariants = ["liteDebug", "prodDebug"]
+    entryFile = file("../../index.js")
 
-    // Hermes commands (Windows)
-    hermesCommand = file("../../node_modules/react-native/sdks/hermesc/win64-bin/hermesc").absolutePath
+    // Hermes (Windows)
+    hermesCommand = file(
+        "../../node_modules/react-native/sdks/hermesc/win64-bin/hermesc"
+    ).absolutePath
 }
 
-
 dependencies {
+
+    // React Native core
+    implementation("com.facebook.react:react-android")
+
+    // Hermes
+    if (hermesEnabled.toBoolean()) {
+        implementation("com.facebook.react:hermes-android")
+    } else {
+        implementation(jscFlavor)
+    }
+
     // Firebase
     implementation platform("com.google.firebase:firebase-bom:${rootProject.ext.firebaseBomVersion}")
     implementation "com.google.firebase:firebase-auth-ktx"
@@ -100,24 +101,12 @@ dependencies {
     implementation "com.google.firebase:firebase-functions-ktx"
     implementation "com.google.firebase:firebase-storage-ktx"
 
-    implementation "com.facebook.react:react-native:+"
-
-    // MultiDex
-    implementation "androidx.multidex:multidex:2.0.1"
-
-    // Moduli Android base
+    // Android base
     implementation "androidx.appcompat:appcompat:1.6.1"
     implementation "androidx.core:core-ktx:1.12.0"
 
-    // React Native core
-    implementation "com.facebook.react:react-android"
-
-    // Hermes/JSC condizionale
-    if (hermesEnabled.toBoolean()) {
-        implementation("com.facebook.react:hermes-android")
-    } else {
-        implementation jscFlavor
-    }
+    // MultiDex
+    implementation "androidx.multidex:multidex:2.0.1"
 }
 
 
