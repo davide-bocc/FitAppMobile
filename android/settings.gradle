@@ -20,6 +20,17 @@ dependencyResolutionManagement {
     }
 }
 
+
 rootProject.name = "FitAppMobile"
 include(":app")
+
+apply from: file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
+applyNativeModulesSettingsGradle(settings)
+
+def originalApplyNativeModules = this.&applyNativeModulesSettingsGradle
+def filteredApplyNativeModulesSettingsGradle = { settings ->
+    originalApplyNativeModules(settings)
+    settings.getIncludedBuilds().removeAll { excludeModules.contains(it.name) }
+}
+
 

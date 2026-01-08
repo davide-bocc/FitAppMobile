@@ -4,7 +4,7 @@ buildscript {
         minSdkVersion = 24
         compileSdkVersion = 34
         targetSdkVersion = 34
-        kotlinVersion = "1.9.24"
+        kotlinVersion = "1.9.10"
         ndkVersion = "26.2.11394342"
         firebaseBomVersion = "33.3.0"
     }
@@ -31,6 +31,13 @@ allprojects {
         maven { url = uri("$rootDir/../node_modules/hermes-engine/maven") }
         maven { url = uri("https://www.jitpack.io") }
     }
+
+    configurations.all {
+        resolutionStrategy {
+            force 'org.bouncycastle:bcprov-jdk15on:1.70'
+            force 'com.google.firebase:firebase-iid:21.1.0'
+        }
+    }
 }
 
 tasks.register("clean", Delete) {
@@ -39,16 +46,15 @@ tasks.register("clean", Delete) {
 
 subprojects { subproject ->
     afterEvaluate {
-        if (subproject.plugins.hasPlugin('java') || subproject.plugins.hasPlugin('kotlin')) {
-            subproject.tasks.withType(JavaCompile).configureEach {
-                sourceCompatibility = '17'
-                targetCompatibility = '17'
-            }
+        if (subproject.plugins.hasPlugin('kotlin-android')) {
             subproject.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
                 kotlinOptions {
                     jvmTarget = "17"
+                    freeCompilerArgs += ["-Xskip-metadata-version-check", "-Xallow-jvm-ir-dependencies"]
                 }
             }
         }
     }
 }
+
+

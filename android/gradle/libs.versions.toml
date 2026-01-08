@@ -1,6 +1,6 @@
 [versions]
-androidGradlePlugin = "8.1.1"
-kotlin = "1.9.24"
+androidGradlePlugin = "8.2.2"
+kotlin = "1.9.10"
 reactNative = "0.78.0"
 compileSdk = "35"
 targetSdk = "35"
