@@ -70,16 +70,19 @@ android {
     buildFeatures {
         buildConfig true
     }
-
+/*
     sourceSets {
+        main {
+            java.srcDirs = ["src/main/java"]
+        }
         debug {
-        java.srcDirs += "build/generated/rncli/src/main/java"
-        java.srcDirs += "build/generated/rn_codegen/src/main/java"
-    }
-    release {
-        java.srcDirs += "build/generated/rn_codegen/src/main/java"
-    }
-    }
+            java.srcDirs += "build/generated/rncli/src/main/java"
+            java.srcDirs += "build/generated/rn_codegen/src/main/java"
+        }
+        release {
+            java.srcDirs += "build/generated/rn_codegen/src/main/java"
+        }
+    }*/
 }
 
 react {
@@ -113,6 +116,8 @@ dependencies {
     implementation "androidx.multidex:multidex:2.0.1"
 
     implementation 'org.bouncycastle:bcprov-jdk15on:1.70'
+
+
 }
 
 afterEvaluate {

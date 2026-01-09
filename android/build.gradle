@@ -4,7 +4,7 @@ buildscript {
         minSdkVersion = 24
         compileSdkVersion = 34
         targetSdkVersion = 34
-        kotlinVersion = "1.9.10"
+        kotlinVersion = "1.8.22"
         ndkVersion = "26.2.11394342"
         firebaseBomVersion = "33.3.0"
     }
