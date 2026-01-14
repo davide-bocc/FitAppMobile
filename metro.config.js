@@ -10,4 +10,9 @@ module.exports = mergeConfig(defaultConfig, {
     assetExts: defaultConfig.resolver.assetExts.filter(ext => ext !== 'svg'),
     sourceExts: [...defaultConfig.resolver.sourceExts, 'svg'],
   },
+  watchFolders: [],
+  blockList: [
+    /android\/build\/.*/,
+    /android\/app\/build\/.*/,
+  ],
 });

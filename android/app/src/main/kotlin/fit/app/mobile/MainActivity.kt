@@ -2,17 +2,18 @@ package fit.app.mobile
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
-import com.facebook.react.defaults.DefaultReactActivityDelegate
+import com.facebook.react.ReactRootView
+import com.swmansion.gesturehandler.react.RNGestureHandlerEnabledRootView
 
 class MainActivity : ReactActivity() {
 
     override fun getMainComponentName(): String = "FitAppMobile"
 
     override fun createReactActivityDelegate(): ReactActivityDelegate {
-        return DefaultReactActivityDelegate(
-            this,
-            mainComponentName,
-            BuildConfig.IS_NEW_ARCHITECTURE_ENABLED
-        )
+        return object : ReactActivityDelegate(this, mainComponentName) {
+            override fun createRootView(): ReactRootView {
+                return RNGestureHandlerEnabledRootView(this@MainActivity)
+            }
+        }
     }
 }

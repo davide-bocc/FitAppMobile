@@ -26,11 +26,8 @@ public class MainApplication extends Application implements ReactApplication {
 
                 @Override
                 public List<ReactPackage> getPackages() {
-                    List<ReactPackage> packages = new ArrayList<>();
-                    packages.add(new MainReactPackage());
-                    return packages;
+                    return new PackageList(this).getPackages();
                 }
-
 
                 // Entry point JS
                 @Override

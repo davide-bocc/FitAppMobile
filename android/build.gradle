@@ -50,7 +50,7 @@ subprojects { subproject ->
             subproject.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
                 kotlinOptions {
                     jvmTarget = "17"
-                    freeCompilerArgs += ["-Xskip-metadata-version-check", "-Xallow-jvm-ir-dependencies"]
+                    freeCompilerArgs += ["-Xskip-metadata-version-check"]
                 }
             }
         }
