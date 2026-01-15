@@ -19,7 +19,7 @@ buildscript {
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
         classpath("com.google.gms:google-services:4.4.3")
         classpath("com.google.firebase:firebase-crashlytics-gradle:2.9.9")
-        classpath files("../node_modules/react-native/android/com/facebook/react/react-native-gradle-plugin.gradle")
+        //classpath files("../node_modules/react-native/android/com/facebook/react/react-native-gradle-plugin.gradle")
     }
 }
 
@@ -38,6 +38,13 @@ allprojects {
             force 'com.google.firebase:firebase-iid:21.1.0'
         }
     }
+
+    afterEvaluate { project ->
+        project.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all { kotlinCompile ->
+            kotlinCompile.dependsOn(":app:generateCodegenArtifactsFromSchema")
+            kotlinCompile.dependsOn(":app:generateCodegenSchemaFromJavaScript")
+        }
+    }
 }
 
 tasks.register("clean", Delete) {
@@ -48,13 +55,12 @@ subprojects { subproject ->
     afterEvaluate {
         if (subproject.plugins.hasPlugin('kotlin-android')) {
             subproject.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-                kotlinOptions {
-                    jvmTarget = "17"
-                    freeCompilerArgs += ["-Xskip-metadata-version-check"]
-                }
+                dependsOn(":app:generateCodegenArtifactsFromSchema")
+                dependsOn(":app:generateCodegenSchemaFromJavaScript")
             }
         }
     }
 }
+
 
 

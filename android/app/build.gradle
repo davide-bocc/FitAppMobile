@@ -70,19 +70,30 @@ android {
     buildFeatures {
         buildConfig true
     }
-/*
+
     sourceSets {
         main {
-            java.srcDirs = ["src/main/java"]
+            java.srcDirs += [
+                "src/main/java",
+                "build/generated/rn_codegen/src/main/java",
+                "build/generated/rncli/src/main/java",
+                "build/generated/source/codegen/java"
+            ]
         }
         debug {
-            java.srcDirs += "build/generated/rncli/src/main/java"
-            java.srcDirs += "build/generated/rn_codegen/src/main/java"
+            java.srcDirs += [
+                "build/generated/rncli/src/main/java",
+                "build/generated/rn_codegen/src/main/java",
+                "build/generated/source/codegen/java"
+            ]
         }
         release {
-            java.srcDirs += "build/generated/rn_codegen/src/main/java"
+            java.srcDirs += [
+                "build/generated/rn_codegen/src/main/java",
+                "build/generated/source/codegen/java"
+            ]
         }
-    }*/
+    }
 }
 
 react {
@@ -120,8 +131,15 @@ dependencies {
 }
 
 afterEvaluate {
-    tasks.matching { it.name == "compileDebugJavaWithJavac" }.all {
+    tasks.matching { it.name == "compileDebugKotlin" || it.name == "compileReleaseKotlin" }.all {
         dependsOn tasks.matching { it.name.startsWith("generateAutolinking") }
+    }
+}
+
+gradle.projectsEvaluated {
+    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all { kotlinCompile ->
+        kotlinCompile.dependsOn(":app:generateCodegenArtifactsFromSchema")
+        kotlinCompile.dependsOn(":app:generateCodegenSchemaFromJavaScript")
     }
 }
 
